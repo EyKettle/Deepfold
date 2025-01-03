@@ -1,0 +1,17 @@
+.setting-card {
+  background-color: var(--card-surface);
+  border-radius: 16px;
+  border: solid 1px var(--border-color);
+  padding: 8px 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.setting-card > label {
+  font-size: 1.125em;
+  font-weight: bold;
+  width: 100%;
+  text-align: left;
+  opacity: 0.6;
+}
