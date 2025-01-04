@@ -53,7 +53,7 @@ export const MessageContainer: Component<MessageContainerProps> = (props) => {
       <VList ref={h => listHandle = h} data={props.messages || []}>
         {(msg: MsgInfo, index) => {
           let tail;
-          if (index === (props.messages!.length - 1)) tail = <div style={{ height: "150px" }}></div>
+          if (index === (props.messages!.length - 1)) tail = <div style={{ height: "154px" }}></div>
           return (<>
             <Suspense fallback={<div class="loading" />}>
               <Message {...msg} />

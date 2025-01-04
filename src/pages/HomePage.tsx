@@ -100,7 +100,7 @@ export const homePage: Component<homePageProps> = (props) => {
         }}
         class="page"
       >
-        <MessageContainer messages={messages()} commands={((endIndex, toBottom) => {
+        <MessageContainer messages={testBubbleMessages} commands={((endIndex, toBottom) => {
             findEndIndex = endIndex;
             scrollToBottom = toBottom;
           })}/>
