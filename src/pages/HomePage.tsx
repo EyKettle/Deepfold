@@ -47,8 +47,6 @@ export const homePage: Component<homePageProps> = (props) => {
       result.push(msg);
       return result;
     });
-    if (newMessage.sender === MsgSender.User) 
-      scrollToBottom();
 
     const messageIndex = messages().length - 1;
 
@@ -60,6 +58,8 @@ export const homePage: Component<homePageProps> = (props) => {
         console.error("Message not found");
         return messageIndex;
       }
+      if (newMessage.sender === MsgSender.User) 
+        scrollToBottom();
       const isLastItem = findEndIndex() === currentMessages.length - 1;
       if (!isLastItem) return messageIndex;
       const hasHistory = currentMessages.length > 1;
