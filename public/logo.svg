@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_图层_1" data-name="图层 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #f43d3d;
+      }
+
+      .cls-2 {
+        fill: url(#_未命名的渐变_80-2);
+      }
+
+      .cls-3 {
+        fill: url(#_未命名的渐变_80);
+      }
+
+      .cls-4 {
+        fill: #c47d4d;
+      }
+
+      .cls-5 {
+        fill: #b50000;
+      }
+    </style>
+    <linearGradient id="_未命名的渐变_80" data-name="未命名的渐变 80" x1="7" y1="17" x2="32" y2="17" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b85c3f"/>
+      <stop offset=".28" stop-color="#bf6e50"/>
+      <stop offset=".73" stop-color="#c98767"/>
+      <stop offset="1" stop-color="#cd9070"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_80-2" data-name="未命名的渐变 80" y1="42.5" y2="42.5" xlink:href="#_未命名的渐变_80"/>
+  </defs>
+  <g id="_原图" data-name="原图">
+    <g>
+      <polygon class="cls-4" points="32 8 32 21 57 26 57 13 32 8"/>
+      <polygon class="cls-3" points="7 13 7 26 32 21 32 8 7 13"/>
+      <polygon class="cls-4" points="32 34 32 45 57 51 57 39 32 34"/>
+      <polygon class="cls-2" points="7 39 7 51 32 45 32 34 7 39"/>
+      <polygon class="cls-1" points="40 56 57 51 57 39 40 44 40 56"/>
+      <polygon class="cls-1" points="40 18 40 31 57 26 57 13 40 18"/>
+      <polygon class="cls-5" points="24 18 7 13 7 26 24 31 24 18"/>
+      <polygon class="cls-5" points="7 39 7 51 24 56 24 44 7 39"/>
+    </g>
+  </g>
+</svg>

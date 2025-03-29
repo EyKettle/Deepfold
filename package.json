@@ -1,6 +1,6 @@
 {
   "name": "deepfold",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "",
   "type": "module",
   "scripts": {
@@ -13,11 +13,16 @@
   "license": "MIT",
   "dependencies": {
     "@langchain/core": "^0.3.27",
+    "@langchain/langgraph": "^0.2.39",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-shell": "^2",
-    "langchain": "^0.3.9",
+    "langchain": "^0.3.11",
     "motion": "^11.14.4",
+    "postcss": "^8.5.3",
+    "postcss-preset-env": "^10.1.5",
+    "remark-gfm": "^4.0.1",
     "solid-js": "^1.7.8",
+    "solid-markdown": "^2.0.14",
     "solid-motionone": "^1.0.2",
     "virtua": "^0.39.3"
   },

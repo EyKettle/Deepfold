@@ -1,11 +1,67 @@
 import { createEffect, onCleanup } from "solid-js";
-import { MsgInfo, MsgPosition, MsgSender } from "./Components/MessageBox";
+import { MsgInfo, MsgPosition, MsgSender } from "../controls/MessageBox";
 import { invoke } from "@tauri-apps/api/core";
+import { ServiceConfig } from "../Ai/CoreService";
+
+export type Version = {
+  code: "REL" | "BET" | "DEV";
+  number: `${number}.${number}.${number}`;
+};
+
+export type ServiceError = {
+  error_type: string;
+  message: string;
+};
+
+export function parseServiceError(error: ServiceError) {
+  switch (error.error_type) {
+    case "Warn":
+      console.warn(error.message);
+      break;
+    case "Error":
+      console.error(error.message);
+      break;
+  }
+}
 
 export async function readAPIKey(): Promise<string> {
   try {
-    const api = await invoke("read_path", { path: "F:\\Developing\\Tauri\\Deepfold\\api.txt" });
+    const api = await invoke("read_path", {
+      path: "E:\\Developing\\Profiles\\Deepseek\\API.txt",
+    });
     return api as string;
+  } catch (error) {
+    console.error("读取API密钥失败:", error);
+    throw error;
+  }
+}
+
+export async function botConfigTemples(
+  type: "SiliconCloud" | "Deepseek"
+): Promise<ServiceConfig> {
+  try {
+    let names = {
+      folderName: "SiliconCloud",
+      webName: "siliconflow.cn",
+      modelName: "Qwen/Qwen2.5-7B-Instruct",
+    };
+    switch (type) {
+      case "Deepseek":
+        names.folderName = "Deepseek";
+        names.webName = "deepseek.com";
+        names.modelName = "deepseek-chat";
+        break;
+    }
+    const api = await invoke("read_path", {
+      path: `E:\\Developing\\Profiles\\${names.folderName}\\API.txt`,
+    });
+    return {
+      endpoint: `https://api.${names.webName}/v1/chat/completions`,
+      apiKey: api as string,
+      modelName: names.modelName,
+      hooks: ["message_add", "message_push", "message_tip"],
+      stream: false,
+    };
   } catch (error) {
     console.error("读取API密钥失败:", error);
     throw error;
@@ -68,14 +124,16 @@ export function createDOMDebugger(targetSelector: string) {
 
 interface KeyBindingOptions {
   key: string;
-  keyModifiers?: string;
   callback: (e: KeyboardEvent) => void;
+  state?: "keydown" | "keyup";
+  keyModifiers?: string;
 }
 
 export function createKeyBinding(options: KeyBindingOptions[]) {
   const createKeyBindingSingle = (
     key: string,
     callback: (e: KeyboardEvent) => void,
+    state: "keydown" | "keyup" = "keyup",
     keyModifiers?: string
   ) => {
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -85,14 +143,19 @@ export function createKeyBinding(options: KeyBindingOptions[]) {
       }
     };
 
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener(state, handleKeyUp);
 
     onCleanup(() => {
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener(state, handleKeyUp);
     });
   };
   for (const option of options) {
-    createKeyBindingSingle(option.key, option.callback, option.keyModifiers);
+    createKeyBindingSingle(
+      option.key,
+      option.callback,
+      option.state,
+      option.keyModifiers
+    );
   }
 }
 
@@ -249,7 +312,8 @@ export const testBubbleMessages: MsgInfo[] = [
   {
     sender: MsgSender.Bot,
     position: MsgPosition.Middle,
-    content: "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
+    content:
+      "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
   },
   {
     sender: MsgSender.Bot,
@@ -299,7 +363,8 @@ export const testBubbleMessages: MsgInfo[] = [
   {
     sender: MsgSender.Bot,
     position: MsgPosition.Middle,
-    content: "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
+    content:
+      "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
   },
   {
     sender: MsgSender.Bot,
@@ -349,7 +414,8 @@ export const testBubbleMessages: MsgInfo[] = [
   {
     sender: MsgSender.Bot,
     position: MsgPosition.Middle,
-    content: "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
+    content:
+      "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
   },
   {
     sender: MsgSender.Bot,
@@ -399,7 +465,8 @@ export const testBubbleMessages: MsgInfo[] = [
   {
     sender: MsgSender.Bot,
     position: MsgPosition.Middle,
-    content: "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
+    content:
+      "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
   },
   {
     sender: MsgSender.Bot,
@@ -449,7 +516,8 @@ export const testBubbleMessages: MsgInfo[] = [
   {
     sender: MsgSender.Bot,
     position: MsgPosition.Middle,
-    content: "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
+    content:
+      "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
   },
   {
     sender: MsgSender.Bot,
@@ -499,7 +567,8 @@ export const testBubbleMessages: MsgInfo[] = [
   {
     sender: MsgSender.Bot,
     position: MsgPosition.Middle,
-    content: "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
+    content:
+      "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
   },
   {
     sender: MsgSender.Bot,
@@ -549,7 +618,8 @@ export const testBubbleMessages: MsgInfo[] = [
   {
     sender: MsgSender.Bot,
     position: MsgPosition.Middle,
-    content: "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
+    content:
+      "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
   },
   {
     sender: MsgSender.Bot,
@@ -599,7 +669,8 @@ export const testBubbleMessages: MsgInfo[] = [
   {
     sender: MsgSender.Bot,
     position: MsgPosition.Middle,
-    content: "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
+    content:
+      "这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本这是一段测试文本",
   },
   {
     sender: MsgSender.Bot,
@@ -611,4 +682,4 @@ export const testBubbleMessages: MsgInfo[] = [
     position: MsgPosition.End,
     content: "这是一段测试文本",
   },
-]
+];

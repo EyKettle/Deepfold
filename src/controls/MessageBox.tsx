@@ -1,14 +1,7 @@
 import { Component, For, Show, Suspense } from "solid-js";
 import { VList, VListHandle } from "virtua/solid";
 import "./Components.css";
-
-export interface MsgTip {
-  icon: string;
-  title: string;
-  description?: string;
-  buttons?: string[];
-  functions?: (() => void)[];
-}
+import { MsgTip } from "../Ai/CoreService";
 
 export enum MsgSender {
   User = "user",

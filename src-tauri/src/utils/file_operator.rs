@@ -1,11 +1,17 @@
-use std::{ fs::{self, File}, io::{ Read, Write } };
+use std::{ fs::{ self, File }, io::{ Read, Write } };
 
 #[tauri::command]
-pub fn read_path(path: &str) -> String {
-    let mut file = File::open(path).unwrap();
+pub fn read_path(path: &str) -> Result<String, String> {
+    let mut file = match File::open(path) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("[FileOperator]\nCannot read this path: {e}\nPath: {path}");
+            return Err(e.to_string());
+        }
+    };
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
-    contents
+    Ok(contents)
 }
 
 #[tauri::command]

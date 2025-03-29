@@ -1,4 +1,4 @@
-import { animate } from "motion";
+import { animate, animateMini } from "motion";
 
 export const animations = {
   slideIn: (element: HTMLElement) => {
@@ -38,5 +38,20 @@ export const animations = {
         );
       }
     }
+  },
+};
+
+export const textAnimations = {
+  errorFlash: (element: HTMLElement) => {
+    animateMini(
+      element,
+      {
+        color: ["unset", "red", "unset"],
+      },
+      {
+        duration: 0.8,
+        ease: [0, 0, 0, 1],
+      }
+    );
   },
 };

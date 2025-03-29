@@ -1,0 +1,5 @@
+{
+  "version": "0.0.15",
+  "changed": ["./app.css", "./markdown.css", "./chatInputBox.tsx", "./chatMessageBox.tsx"],
+  "tempFix": [{ "target": "./card.tsx", "desc": "for disable shadow" }]
+}

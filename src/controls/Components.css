@@ -4,9 +4,9 @@
 
 .inputBox-container {
   --input-surface: #f5f5f5;
-  --submit-surface: rgba(255, 65, 65, 0.4);
-  --submit-hover: rgba(255, 80, 80, 0.6);
-  --submit-pressed: rgba(255, 0, 0, 0.3);
+  --submit-surface: rgba(255, 20, 20, 0.4);
+  --submit-hover: rgba(255, 100, 100, 0.45);
+  --submit-pressed: rgba(190, 0, 0, 0.45);
 
   position: absolute;
   bottom: 0;
@@ -252,6 +252,9 @@ p {
 
   .inputBox-container {
     --input-surface: #383838;
+    --submit-surface: rgba(255, 20, 20, 0.4);
+    --submit-hover: rgba(255, 70, 70, 0.45);
+    --submit-pressed: rgba(160, 0, 0, 0.45);
   }
 
   #message-container {

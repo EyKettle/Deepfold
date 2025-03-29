@@ -1,53 +1,84 @@
-import { Component, createMemo, Show } from "solid-js";
-
-import "./Components.css";
+import { Component, JSX } from "solid-js";
 
 interface InputBoxProps {
-  show: boolean;
-  files?: string[];
-  onSubmit: (text: string) => void;
+  placeholder?: string;
+  value?: string;
+  multiline?: boolean;
+  style?: JSX.CSSProperties;
+  onFocus?: (
+    event: FocusEvent & {
+      currentTarget: HTMLInputElement;
+      target: HTMLInputElement;
+    }
+  ) => void;
+  onBlur?: (
+    event: FocusEvent & {
+      currentTarget: HTMLInputElement;
+      target: HTMLInputElement;
+    }
+  ) => void;
+  onChange?: (
+    event: Event & {
+      currentTarget: HTMLInputElement;
+      target: HTMLInputElement;
+    }
+  ) => void;
+  onInput?: (
+    event: InputEvent & {
+      currentTarget: HTMLInputElement;
+      target: HTMLInputElement;
+    }
+  ) => void;
 }
 
-export const InputBox: Component<InputBoxProps> = (props) => {
-  const fileNames = props.files?.map((file) => file.split("/").pop());
-  const containerClass = createMemo(
-    () => "inputBox-container" + (props.show ? "" : " leave")
-  );
-
-  const submit = () => {
-    const textarea = document.getElementById("inputBox")?.children[0] as HTMLTextAreaElement;
-    if (textarea) {
-      const textValue = textarea.value;
-      if (textValue.trim() !== "") {
-        props.onSubmit(textValue.trimEnd());
-        textarea.value = "";
-      }
-      textarea.focus();
-    }
-  };
+const InputBox: Component<InputBoxProps> = (props) => {
+  let element: HTMLDivElement | null = null;
 
   return (
-    <div id="inputBox" class={containerClass()}>
-      <textarea
-        placeholder="描述你的需求"
-        on:keyup={(e) => {
-          if (e.key === "Enter" && e.ctrlKey) submit();
-        }}
-      />
-      <div class="bar">
-        <button class="icon addFile ghost">{"@"}</button>
-        <div class="files">
-          <Show when={fileNames}>
-            <div class="file">{fileNames!.pop()}</div>
-            <Show when={fileNames!.length > 1}>
-              <div class="card" />
-            </Show>
-          </Show>
-        </div>
-        <button class="submit" onClick={() => submit()}>
-          提交
-        </button>
-      </div>
-    </div>
+    <input
+      ref={(e) => (element = e)}
+      type="text"
+      style={{
+        border: "none",
+        "font-size": "1.125rem",
+        "text-align": "start",
+        color: "var(--color-theme-text)",
+        "border-radius": "0.5rem",
+        "background-color": "var(--color-input-default)",
+        "box-shadow": "0 0 0 0.0625rem var(--color-border-default)",
+        padding: "0.625rem",
+        "transition-property": "background-color, box-shadow",
+        "transition-duration": "0.2s",
+        "transition-timing-function": "cubic-bezier(0, 0, 0, 1)",
+        cursor: "text",
+        ...props.style,
+      }}
+      placeholder={props.placeholder || ""}
+      value={props.value || ""}
+      on:mouseenter={() => {
+        if (!element || element === document.activeElement) return;
+        element.style.boxShadow = "0 0 0 0.0625rem var(--color-theme-accent)";
+      }}
+      on:mouseleave={() => {
+        if (!element || element === document.activeElement) return;
+        element.style.boxShadow = "0 0 0 0.0625rem var(--color-border-default)";
+      }}
+      on:focus={(e) => {
+        if (!element) return;
+        element.style.zIndex = "3";
+        element.style.boxShadow = "0 0 0 0.125rem var(--color-theme-accent)";
+        props.onFocus?.(e);
+      }}
+      on:blur={(e) => {
+        if (!element) return;
+        element.style.zIndex = "unset";
+        element.style.boxShadow = "0 0 0 0.0625rem var(--color-border-default)";
+        props.onBlur?.(e);
+      }}
+      on:change={props.onChange}
+      on:input={props.onInput}
+    />
   );
 };
+
+export default InputBox;

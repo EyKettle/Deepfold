@@ -107,7 +107,13 @@ export class PageManager {
     }
   }
 
-  switch(targetIndex: number, prevIndex: number, transition?: any) {
+  switch(
+    targetIndex: number,
+    prevIndex: number,
+    transition?: any,
+    onPrevFinish?: () => void,
+    onTargetFinish?: () => void
+  ) {
     this.animations.forEach((animation) => {
       animation.stop();
     });
@@ -142,20 +148,20 @@ export class PageManager {
 
     if (prevElement) {
       prevElement.classList.add("leave");
-      const prevAnimation = animate(
-        prevElement,
-        motions.prev,
-        transitionConfig
-      );
+      prevElement.setAttribute("inert", "");
+      const prevAnimation = animate(prevElement, motions.prev, {
+        ...transitionConfig,
+        onComplete: onPrevFinish,
+      });
       this.animations.push(prevAnimation);
     }
     if (targetElement) {
       targetElement.classList.remove("leave");
-      const targetAnimation = animate(
-        targetElement,
-        motions.target,
-        transitionConfig
-      );
+      targetElement.removeAttribute("inert");
+      const targetAnimation = animate(targetElement, motions.target, {
+        ...transitionConfig,
+        onComplete: onTargetFinish,
+      });
       this.animations.push(targetAnimation);
     }
   }
