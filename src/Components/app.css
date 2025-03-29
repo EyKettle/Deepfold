@@ -156,7 +156,7 @@ html {
   overflow: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
+.dark {
   html {
     background-color: #202020;
   }

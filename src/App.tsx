@@ -10,12 +10,10 @@ import {
   botConfigTemples,
   createKeyBinding,
   parseServiceError as catchServiceError,
-  ServiceError,
   Version,
 } from "./utils/debugger";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { MsgTip, CoreService } from "./Ai/CoreService";
 import ChatInputBox from "./components/chatInputBox";
 import { PageContainer } from "./components/pageContainer";
 import { initReport } from "./components/utils";
@@ -30,7 +28,7 @@ enum Pages {
 function App() {
   let version: Version = {
     code: "DEV",
-    number: "0.1.2",
+    number: "0.1.3",
   };
   onMount(async () => {
     invoke("get_version").then((ver: any) => {

@@ -63,6 +63,7 @@
 
 .titlebar-button,
 .titlebar-close {
+  color: var(--color-theme-text);
   font-family: "InnerIcon";
   margin-top: -4px;
   font-size: 14px;
@@ -111,7 +112,7 @@
   flex-direction: column;
 }
 
-@media (prefers-color-scheme: dark) {
+.dark {
   .titlebar-close:active {
     background-color: #c00000;
   }

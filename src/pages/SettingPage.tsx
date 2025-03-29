@@ -3,6 +3,7 @@ import { Component } from "solid-js";
 import { Version } from "../utils/debugger";
 import SettingSwitch from "../controls/SettingSwitch";
 import { invoke } from "@tauri-apps/api/core";
+import { webviewWindow } from "@tauri-apps/api";
 
 interface SettingPageProps {
   version: Version;
@@ -37,7 +38,7 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         }}
       >
         <img
-          src="/public/logo.svg"
+          src="/logo.svg"
           width={128}
           style={{
             filter: "drop-shadow(0 0.25rem 0.25rem var(--color-shadow))",
@@ -90,15 +91,32 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         {[
           {
             label: "浅色",
-            onClick: () => invoke("switch_theme", { themeMode: "light" }),
+            onClick: () => {
+              document.documentElement.classList.remove("dark");
+              invoke("switch_theme", { themeMode: "light" });
+            },
           },
           {
             label: "自动",
-            onClick: () => invoke("switch_theme", { themeMode: "auto" }),
+            onClick: () => {
+              invoke("switch_theme", { themeMode: "auto" }).then(() => {
+                webviewWindow
+                  .getCurrentWebviewWindow()
+                  .theme()
+                  .then((theme) => {
+                    if (theme === "dark")
+                      document.documentElement.classList.add("dark");
+                    else document.documentElement.classList.remove("dark");
+                  });
+              });
+            },
           },
           {
             label: "深色",
-            onClick: () => invoke("switch_theme", { themeMode: "dark" }),
+            onClick: () => {
+              document.documentElement.classList.add("dark");
+              invoke("switch_theme", { themeMode: "dark" });
+            },
           },
         ]}
       </SettingSwitch>
