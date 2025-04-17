@@ -1,34 +1,24 @@
-import { Component, createSignal, onMount } from "solid-js";
-import ChatMessageBox, {
-  ChatMessage,
-  Sender,
-} from "../components/chatMessageBox";
-import { initReport } from "../components/utils";
-import { VirtualizerHandle } from "virtua/solid";
+import { Component, onMount } from "solid-js";
+import ChatMessageBox, { ChatMessage } from "../components/chat/chatMessageBox";
 
 import "../components/markdown.css";
-import { SolidMarkdown } from "solid-markdown";
-import remarkGfm from "remark-gfm";
-import { render } from "solid-js/web";
+import { animate } from "motion";
 
 interface homePageProps {
-  getMethod?: (
-    posOperation: {
-      save: () => void;
-      load: () => void;
-    },
-    scrollToBottom: () => void,
-    appendMessage: (content: string, sender?: Sender) => number,
+  getOps?: (
+    append: (info: ChatMessage, open?: boolean) => number,
+    set: (index: number, content: any, align?: boolean) => void,
+    close: (index: number) => void,
+    clear: () => void,
+    alignBottom: (sudden?: boolean) => void,
+    scrollToBottom: () => void
     // getMessages: () => MsgInfo[],
     // setMessage: (text: string, index?: number) => void,
-    pushStr: (index: number, str: string) => void,
-    clearHistory: () => void
     // tipPop: (tip: MsgTip, index?: number) => void
   ) => void;
 }
 
 const HomePage: Component<homePageProps> = (props) => {
-  const [messages, setMessages] = createSignal<ChatMessage[]>([]);
   // let findEndIndex: () => number;
   // let scrollToBottom: () => void;
 
@@ -145,85 +135,80 @@ const HomePage: Component<homePageProps> = (props) => {
   //   });
   // };
 
-  const appendMessage = (content: string, sender?: Sender): number => {
-    let index = 0;
-    setMessages((prev) => {
-      let value = [...prev];
-      index =
-        value.push({
-          content,
-          sender: sender ?? Sender.Own,
-        }) - 1;
-      return value;
-    });
-    return index;
-  };
-  const pushStr = (index: number, str: string) => {
-    let value = [...messages()];
-    const item = value.at(index);
-    if (item) item.content += str;
-    setMessages(value);
-  };
-
-  const clearHistory = () => {
-    setMessages([]);
-  };
-
-  let chatBox: VirtualizerHandle;
-  let position = 0;
-  let scrollToBottom = () => initReport();
-  const savePosition = () => {
-    position = chatBox.scrollOffset;
-  };
-  const loadPosition = () => {
-    chatBox.scrollTo(position);
-  };
+  let append: (info: ChatMessage, open?: boolean) => number;
+  let set: (index: number, content: any, align?: boolean) => void;
+  let close: (index: number) => void;
+  let clear: () => void;
+  let alignBottom: (sudden?: boolean) => void;
+  let scrollToBottom: () => void;
 
   onMount(() => {
-    if (props.getMethod)
-      props.getMethod(
-        {
-          save: savePosition,
-          load: loadPosition,
-        },
-        scrollToBottom,
-        appendMessage,
-        pushStr,
-        clearHistory
-      );
+    if (props.getOps)
+      props.getOps(append, set, close, clear, alignBottom, scrollToBottom);
   });
 
   return (
     <ChatMessageBox
       paddingBottom="12rem"
-      getMethods={(_, toBottom) => {
-        scrollToBottom = toBottom;
+      getListOps={(a, _r, s, _o, cs, cr) => {
+        append = a;
+        set = s;
+        close = cs;
+        clear = cr;
       }}
-      ref={(e) => (chatBox = e)}
+      getScrollOps={(_t, toBottom, _p, _s, _e, _i, ab) => {
+        scrollToBottom = toBottom;
+        alignBottom = ab;
+      }}
       style={{
         "box-sizing": "border-box",
         "padding-inline": "0.5rem",
         "--color-border-default": "transparent",
       }}
       snapOffset={750}
+      showupMotion={(bubble) =>
+        new Promise<void>((resolve) => {
+          animate(
+            bubble,
+            {
+              opacity: [0, 1],
+              filter: ["blur(0.5rem)", "blur(0)"],
+            },
+            {
+              duration: 0.3,
+              ease: [0.5, 0, 0, 1],
+            }
+          );
+          animate(
+            bubble,
+            {
+              scale: [0.6, 1],
+            },
+            {
+              type: "spring",
+              duration: 0.4,
+              bounce: 0.3,
+            }
+          ).then(resolve);
+        })
+      }
     >
-      {messages()
-      // .map((value) => {
-      //   const formatContent = (
-      //     <SolidMarkdown
-      //       class="markdown-body"
-      //       remarkPlugins={[remarkGfm]}
-      //       children={value.content}
-      //       renderingStrategy="reconcile"
-      //     />
-      //   );
-      //   console.log(document.getElementsByClassName("markdown-body")[0]);
-
-      //   return {
-      //     sender: value.sender,
-      //     content: formatContent,
-      //   };
-      // })
+      {
+        // .map((value) => {
+        //   const formatContent = (
+        //     <SolidMarkdown
+        //       class="markdown-body"
+        //       remarkPlugins={[remarkGfm]}
+        //       children={value.content}
+        //       renderingStrategy="reconcile"
+        //     />
+        //   );
+        //   console.log(document.getElementsByClassName("markdown-body")[0]);
+        //   return {
+        //     sender: value.sender,
+        //     content: formatContent,
+        //   };
+        // })
       }
     </ChatMessageBox>
   );

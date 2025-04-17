@@ -132,9 +132,8 @@ const SwitchItem: Component<SwitchItemProps> = (props) => {
       ref={(e) => (element = e)}
       style={{
         "flex-grow": 1,
-        display: "flex",
-        "justify-content": "center",
-        "align-items": "center",
+        display: "grid",
+        "place-items": "center",
         border: "none",
         padding: "0.5rem 1rem",
         "font-size": `${props.fontSize ?? "1.05rem"}`,
@@ -208,7 +207,7 @@ export const Switch: Component<SwitchProps> = (props) => {
     const prev = activeIndex();
     setActiveIndex(index);
     resetHandles[prev]();
-    if (props.onChange) props.onChange(index);
+    props.onChange?.(index);
   };
   let resetHandles: (() => void)[] = Array(props.children.length).fill(() =>
     console.warn("Switch item not found")
@@ -217,8 +216,7 @@ export const Switch: Component<SwitchProps> = (props) => {
   return (
     <div
       style={{
-        display: "flex",
-        "justify-content": "center",
+        display: "inline-flex",
         "min-height": "2.5rem",
         gap: "0.4rem",
         padding: "0.5rem",

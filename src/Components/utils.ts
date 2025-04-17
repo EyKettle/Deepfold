@@ -1,3 +1,6 @@
+import { createRoot, JSXElement } from "solid-js";
+import { insert } from "solid-js/web";
+
 export function separateValueAndUnit(
   cssValue: string
 ): { value: number; unit: string } | null {
@@ -10,6 +13,10 @@ export function separateValueAndUnit(
   return null;
 }
 
-export function initReport() {
-  console.error("Not initialized");
-}
+export const blocker = (height?: string, width?: string) => {
+  const div = document.createElement("div");
+  div.style.flexShrink = "0";
+  if (height) div.style.height = height;
+  if (width) div.style.width = width;
+  return div;
+};

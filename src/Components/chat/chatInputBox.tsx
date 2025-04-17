@@ -1,6 +1,5 @@
 import { Component, createEffect, JSX, onMount } from "solid-js";
-import { Button } from "./button";
-import { initReport } from "./utils";
+import { Button } from "../button";
 
 interface ChatInputBoxProps {
   showed?: boolean;
@@ -42,7 +41,7 @@ interface ChatInputBoxProps {
   bindKey?: {
     submit: string;
   };
-  getRef?: (outerBox: HTMLDivElement, textArea: HTMLTextAreaElement) => void;
+  ref?: (outerBox: HTMLDivElement, textArea: HTMLTextAreaElement) => void;
 }
 
 const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
@@ -51,8 +50,8 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
   let element: HTMLDivElement;
 
   onMount(() => {
-    if (props.getRef)
-      props.getRef(element, element.firstChild as HTMLTextAreaElement);
+    if (props.ref)
+      props.ref(element, element.firstChild as HTMLTextAreaElement);
   });
 
   createEffect(() => {
@@ -73,12 +72,15 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
     if (!props.onSubmit && !element.firstChild) return;
     const textArea = element.firstChild as HTMLTextAreaElement;
     if (textArea.value !== "") {
-      if (props.onSubmit!(textArea.value)) textArea.value = "";
+      if (props.onSubmit?.(textArea.value)) {
+        textArea.value = "";
+        textArea.focus();
+      }
     }
   };
 
-  let submitPress = () => initReport();
-  let submitRelease = () => initReport();
+  let submitPress: () => void;
+  let submitRelease: () => void;
   return (
     <div
       aria-disabled={!props.showed}
@@ -105,6 +107,7 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
       }}
     >
       <textarea
+        name="chat-input"
         disabled={!props.showed}
         style={{
           "font-size": `${props.fontSize ?? "1rem"}`,

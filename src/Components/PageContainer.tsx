@@ -1,8 +1,9 @@
 import { Component, JSX, JSXElement, onCleanup, onMount } from "solid-js";
-import { insert } from "solid-js/web";
+import { render } from "solid-js/web";
 
 type PageInfo = {
   name: string;
+  memoPosition?: boolean;
   onPrepare?: () => void;
   onRouted?: (path: string, param?: string) => void;
   onLeave?: () => void;
@@ -35,6 +36,8 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
 
   let frontIndex: number = props.defaultIndex;
   let pages: HTMLDivElement[] = [];
+  let scrollPos = new Map<HTMLDivElement, number>();
+  let scrolledItems = new Set<HTMLDivElement>();
 
   const updateFrontPage = (target: number) => {
     if (!container) return;
@@ -46,6 +49,7 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
         const newPage = container.appendChild(pages[target]);
         const previous = frontIndex;
         frontIndex = target;
+        if (props.pageInfos[previous].memoPosition !== false) saveScrollTop();
         const removeOldPage = () => {
           if (frontIndex !== previous) {
             if (props.pageInfos[previous]?.onLeave)
@@ -69,8 +73,9 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
       } else {
         frontIndex = target;
         container.appendChild(pages[target]);
-        if (props.loadedMotion) props.loadedMotion(container);
+        props.loadedMotion?.(container);
       }
+      if (props.pageInfos[target].memoPosition !== false) loadScrollTop();
       if (props.pageInfos[target]?.onPrepare)
         props.pageInfos[target].onPrepare!();
     }
@@ -103,6 +108,17 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
       if (props.pageInfos[index]?.onRouted)
         props.pageInfos[index].onRouted(props.pageInfos[index].name, param);
     }
+  };
+
+  const saveScrollTop = () => {
+    scrolledItems.forEach((element) => {
+      if (element.scrollTop === 0) scrollPos.delete(element);
+      else scrollPos.set(element, element.scrollTop);
+    });
+    scrolledItems.clear();
+  };
+  const loadScrollTop = () => {
+    scrollPos.forEach((pos, target) => (target.scrollTop = pos));
   };
 
   const handleLocationChange = (first = false, replace?: boolean) => {
@@ -147,6 +163,10 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
   const getFrontIndex = () => frontIndex;
   props.getMethods(handleSwitch, getFrontIndex);
 
+  const handleScroll = (e: Event) => {
+    if (e.target instanceof HTMLDivElement) scrolledItems.add(e.target);
+  };
+
   onMount(() => {
     pages = props.children.map((content, index) => {
       const page = document.createElement("div");
@@ -158,7 +178,7 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
         page.style.display = "flex";
         page.style.justifyContent = "center";
       }
-      insert(page, content);
+      render(() => content, page);
       return page;
     });
 
@@ -177,11 +197,14 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
       )
         window.history.replaceState(null, "", "/");
     }
+
+    container?.addEventListener("scroll", handleScroll, { capture: true });
   });
 
   onCleanup(() => {
     if (props.routeMode !== "none")
       window.removeEventListener("popstate", handlePopState);
+    container?.removeEventListener("scroll", handleScroll, { capture: true });
   });
 
   return (

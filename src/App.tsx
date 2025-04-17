@@ -14,11 +14,11 @@ import {
 } from "./utils/debugger";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import ChatInputBox from "./components/chatInputBox";
+import ChatInputBox from "./components/chat/chatInputBox";
 import { PageContainer } from "./components/pageContainer";
-import { initReport } from "./components/utils";
-import { Sender } from "./components/chatMessageBox";
+import { ChatMessage, Sender } from "./components/chat/chatMessageBox";
 import { animateMini } from "motion";
+import { createMarkdownMessage } from "./components/chat/MessageUtils";
 
 enum Pages {
   SettingPage = 0,
@@ -31,10 +31,6 @@ function App() {
     number: "0.1.3",
   };
   onMount(async () => {
-    invoke("get_version").then((ver: any) => {
-      version.number = ver;
-    });
-
     botConfigTemples("SiliconCloud").then((config) => {
       invoke("ai_service_init", {
         endpoint: config.endpoint,
@@ -150,29 +146,39 @@ function App() {
   // listen<MsgTip>("message_tip", (event) => messageTip(event.payload));
 
   const handleSubmit = (text: string): boolean => {
-    appendMessage(text);
+    append({ sender: Sender.Own, content: text });
+    scrollToBottom();
 
     new Promise<void>(async (resolve) => {
+      const markdownMessage = createMarkdownMessage(
+        {
+          append,
+          set,
+          close,
+          alignBottom,
+        },
+        Sender.Other
+      );
+
       let isReasoning = false;
       const hookId = `ai_stream_${Date.now()}`;
-      const index = appendMessage("", Sender.Other);
       const unlisten = await listen<string>(hookId, (e) => {
         if (isReasoning) {
-          pushStr(index, "\n```\n");
+          markdownMessage.push("\n```\n");
           isReasoning = false;
         }
-        pushStr(index, e.payload);
+        markdownMessage.push(e.payload);
       });
       const unlistenReason = await listen<string>(`${hookId}_reason`, (e) => {
         if (!isReasoning) {
-          pushStr(index, "```Think\n");
+          markdownMessage.push("```Think\n");
           isReasoning = true;
         }
-        pushStr(index, e.payload);
+        markdownMessage.push(e.payload);
       });
       const unlistenError = await listen<string>(`${hookId}_error`, (e) => {
         // TODO: error display logic
-        pushStr(index, `出错了: ${e.payload}`);
+        markdownMessage.push(`出错了: ${e.payload}`);
         unlisten();
         unlistenReason();
         unlistenError();
@@ -183,18 +189,18 @@ function App() {
         unlistenReason();
         unlistenError();
         unlistenEnd();
+        markdownMessage.over();
       });
       invoke("ai_service_send", {
         content: text,
         hookId,
       }).catch((e) => {
         catchServiceError(e);
-        pushStr(index, "程序运行错误");
+        markdownMessage.push("程序运行错误");
       });
       resolve();
     });
 
-    scrollToBottom();
     return true;
 
     //#region 生产环境-初始化
@@ -284,8 +290,7 @@ function App() {
       callback: () => {
         invoke<string>("ai_service_test")
           .then((msg) => {
-            appendMessage(msg, Sender.Other);
-            scrollToBottom();
+            append({ sender: Sender.Other, content: msg });
           })
           .catch(catchServiceError);
       },
@@ -303,7 +308,9 @@ function App() {
       callback: (e) => {
         e.preventDefault();
         invoke("ai_service_clear")
-          .then(() => appendMessage("清除聊天记录", Sender.System))
+          .then(() =>
+            append({ sender: Sender.System, content: "清除聊天记录" })
+          )
           .catch(catchServiceError);
       },
     },
@@ -317,7 +324,9 @@ function App() {
             apiKey: config.apiKey,
             modelName: config.modelName,
           })
-            .then(() => appendMessage("重置服务配置", Sender.System))
+            .then(() =>
+              append({ sender: Sender.System, content: "重置服务配置" })
+            )
             .catch(catchServiceError);
         });
       },
@@ -336,18 +345,13 @@ function App() {
 
   let inputArea: HTMLTextAreaElement;
 
-  let switchTo = (_index: number) => initReport();
+  let switchTo: (_index: number) => void;
 
-  let savePosition = () => initReport();
-  let loadPosition: (() => void) | null = null;
-
-  let scrollToBottom = () => initReport();
-  let appendMessage = (_content: string, _sender?: Sender): number => {
-    initReport();
-    return 0;
-  };
-  let pushStr = (_index: number, _str: string) => initReport();
-  let clearHistory = () => initReport();
+  let append: (info: ChatMessage, open?: boolean) => number;
+  let set: (index: number, content: any, align?: boolean) => void;
+  let clearHistory: () => void;
+  let alignBottom: (sudden?: boolean) => void;
+  let scrollToBottom: () => void;
 
   return (
     <AppWindow title="深度折叠" showSettings={handleShowSettings}>
@@ -355,17 +359,9 @@ function App() {
         pageInfos={[
           {
             name: Pages[Pages.SettingPage],
-            onPrepare: () => {
-              const verNm = document.getElementById("version-number");
-              if (verNm) verNm.textContent = version.number;
-            },
           },
           {
             name: Pages[Pages.HomePage],
-            onPrepare: () => {
-              if (loadPosition) loadPosition;
-            },
-            onLeave: savePosition,
           },
         ]}
         defaultIndex={Pages.HomePage}
@@ -379,7 +375,7 @@ function App() {
           page.style.willChange = "opacity, scale, filter";
           page.style.overflow = "scroll";
         }}
-        switchMotion={(prev, cur, isForward, dir) =>
+        switchMotion={(prev, cur, _isForward, dir) =>
           new Promise<void>((resolve) => {
             if (dir[1] === Pages.SettingPage) {
               animateMini(
@@ -506,13 +502,12 @@ function App() {
       >
         <SettingPage version={version} />
         <HomePage
-          getMethod={(pos, bottom, append, push, clear) => {
-            savePosition = pos.save;
-            loadPosition = pos.load;
-            scrollToBottom = bottom;
-            appendMessage = append;
-            pushStr = push;
-            clearHistory = clear;
+          getOps={(a, s, _cs, cr, ab, b) => {
+            append = a;
+            set = s;
+            clearHistory = cr;
+            alignBottom = ab;
+            scrollToBottom = b;
           }}
         />
       </PageContainer>
@@ -536,7 +531,7 @@ function App() {
             area.style.height = "0";
           }
         }}
-        getRef={(_, area) => (inputArea = area)}
+        ref={(_, area) => (inputArea = area)}
         onFocus={(e) => {
           const box = e.target.parentElement;
           if (box) {

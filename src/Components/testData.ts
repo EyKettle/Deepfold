@@ -1,4 +1,4 @@
-import { ChatMessage, Sender } from "./chatMessageBox";
+import { ChatMessage, Sender } from "./chat/chatMessageBox";
 
 export const testChatData: ChatMessage[] = [
   {

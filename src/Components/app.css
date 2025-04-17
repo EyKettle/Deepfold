@@ -218,7 +218,6 @@ html {
   outline-width: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-  vertical-align: middle;
 }
 
 *:focus {
@@ -238,7 +237,7 @@ html {
 }
 
 span {
-  display: grid;
+  display: inline-grid;
   align-items: center;
   flex: 1 1 0;
 }

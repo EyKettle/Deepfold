@@ -55,11 +55,11 @@ export const Button: Component<ButtonProps> = (props) => {
     if (element)
       element.style.backgroundColor = `var(--color-${props.type}-active)`;
   };
-  const applyMouseup = () => {
+  const applyMouseleave = () => {
     if (element)
       element.style.backgroundColor = `var(--color-${props.type}-default)`;
   };
-  if (props.getAnimates) props.getAnimates(applyMousedown, applyMouseup);
+  props.getAnimates?.(applyMousedown, applyMouseleave);
 
   createEffect(() => {
     if (!element) return;
@@ -142,11 +142,13 @@ export const Button: Component<ButtonProps> = (props) => {
     <button
       ref={(e) => (element = e)}
       style={{
-        display: "flex",
+        display: "inline-grid",
+        "grid-template-columns": `${props.icon && defaultStyle().fontSize} ${
+          props.label && "auto"
+        }`,
         "flex-shrink": 0,
-        "flex-direction": "row",
-        "justify-content": "center",
         "align-items": "center",
+        "vertical-align": "sub",
         "line-height": "1",
         "min-height": "2.5rem",
         "min-width": "2.5rem",
@@ -162,9 +164,8 @@ export const Button: Component<ButtonProps> = (props) => {
         if (!props.disabled && !isTouch)
           e.currentTarget.style.backgroundColor = `var(--color-${props.type}-hover)`;
       }}
-      on:mouseleave={(e) => {
-        if (!props.disabled && !isTouch)
-          e.currentTarget.style.backgroundColor = `var(--color-${props.type}-default)`;
+      on:mouseleave={() => {
+        if (!props.disabled && !isTouch) applyMouseleave();
       }}
       on:mousedown={(e) => {
         if (!props.disabled && !isTouch && e.button === 0) applyMousedown();
@@ -174,7 +175,8 @@ export const Button: Component<ButtonProps> = (props) => {
           isTouch = false;
           return;
         }
-        if (!props.disabled && e.button === 0) applyMouseup();
+        if (!props.disabled && e.button === 0)
+          e.currentTarget.style.backgroundColor = `var(--color-${props.type}-hover)`;
       }}
       on:touchstart={(e) => {
         isTouch = true;
@@ -196,17 +198,15 @@ export const Button: Component<ButtonProps> = (props) => {
       <Show when={props.icon}>
         <div
           style={{
+            display: "grid",
+            "place-items": "center",
             "white-space": "nowrap",
-            width: defaultStyle().fontSize,
-            height: defaultStyle().fontSize,
           }}
         >
           <For each={Array.from(props.icon ?? "")}>
             {(char, index) => (
               <span
                 style={{
-                  position: "absolute",
-                  "inset-block": 0,
                   "font-family": "var(--font-icon)",
                   zoom: index() === 0 ? 0.95 : 1,
                   color: props.iconColors ? props.iconColors[index()] : "unset",
