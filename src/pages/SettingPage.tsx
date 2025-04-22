@@ -1,12 +1,13 @@
-import { Component } from "solid-js";
+import { Component, For } from "solid-js";
 
 import { Version } from "../utils/debugger";
 import SettingSwitch from "../controls/SettingSwitch";
-import { invoke } from "@tauri-apps/api/core";
 import { webviewWindow, app } from "@tauri-apps/api";
+import { Card } from "../components/card";
 
 interface SettingPageProps {
   version: Version;
+  messages: Message[];
 }
 
 const SettingPage: Component<SettingPageProps> = (props) => {
@@ -23,6 +24,7 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         "padding-inline": "0.5rem",
         "--color-shadow": "rgba(0, 0, 0, 0.15)",
         "--color-shadow-auto": "none",
+        "padding-bottom": "2rem",
       }}
       card-width="100%"
     >
@@ -93,7 +95,7 @@ const SettingPage: Component<SettingPageProps> = (props) => {
             label: "浅色",
             onClick: () => {
               document.documentElement.classList.remove("dark");
-              app.setTheme("light")
+              app.setTheme("light");
             },
           },
           {
@@ -115,11 +117,44 @@ const SettingPage: Component<SettingPageProps> = (props) => {
             label: "深色",
             onClick: () => {
               document.documentElement.classList.add("dark");
-              app.setTheme("dark")
+              app.setTheme("dark").catch((e) => console.log(e));
             },
           },
         ]}
       </SettingSwitch>
+      <Card
+        interactType="hover"
+        effect="none"
+        disableShadow={true}
+        description={"当前聊天记录"}
+        style={{
+          cursor: "auto",
+          gap: "1rem",
+          "transition-duration": "0.4s",
+          border: "none",
+          "padding-bottom": "1.5rem",
+        }}
+      >
+        <For
+          each={props.messages}
+          fallback={
+            <p style={{ opacity: 0.6, "margin-bottom": "0.5rem" }}>没有消息</p>
+          }
+        >
+          {(item) => (
+            <div
+              style={{
+                width: "100%",
+                "padding-inline": "8px",
+                "box-sizing": "border-box",
+              }}
+            >
+              <h3 style={{ "text-align": "right" }}>{item.role}</h3>
+              <p style={{ "text-align": "left" }}>{item.content}</p>
+            </div>
+          )}
+        </For>
+      </Card>
     </div>
   );
 };

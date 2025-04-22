@@ -126,6 +126,7 @@ const ChatMessageBubble: Component<ChatMessageBubbleProps> = (props) => {
         style={{
           display: "inline-flex",
           "text-align": "start",
+          "flex-direction": "column",
           "justify-content": "center",
           "align-items": "center",
           "transition-property": "opacity, scale, filter, border-radius",

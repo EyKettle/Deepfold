@@ -1,16 +1,13 @@
-use tauri::{ Manager, Theme };
+use tauri::{Manager, Theme};
 
-mod utils;
 mod ai_service;
+mod utils;
 
-use utils::file_operator::{ read_path, create_file };
 use ai_service::{
-    ai_service_init,
-    ai_service_reset,
-    ai_service_test,
-    ai_service_send,
-    ai_service_clear,
+    ai_calling::AiService, ai_service_clear, ai_service_history, ai_service_init, ai_service_reset,
+    ai_service_send, ai_service_stop,
 };
+use utils::file_operator::{create_file, read_path};
 
 #[tauri::command]
 async fn get_version(app: tauri::AppHandle) -> Result<String, ()> {
@@ -31,27 +28,35 @@ fn switch_theme(app: tauri::AppHandle, theme_mode: &str) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder
-        ::default()
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            app.manage(AiService::new(
+                app.app_handle().clone(),
+                String::new(),
+                String::new(),
+                String::new(),
+            ));
+
             let window = app.get_webview_window("main").unwrap();
-            window.show().expect("Initialized failed because of show window failed.");
+            window
+                .show()
+                .expect("Initialized failed because of show window failed.");
             Ok(())
         })
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(
-            tauri::generate_handler![
-                get_version,
-                switch_theme,
-                read_path,
-                create_file,
-                ai_service_init,
-                ai_service_reset,
-                ai_service_test,
-                ai_service_send,
-                ai_service_clear
-            ]
-        )
+        .invoke_handler(tauri::generate_handler![
+            get_version,
+            switch_theme,
+            read_path,
+            create_file,
+            ai_service_init,
+            ai_service_reset,
+            ai_service_send,
+            ai_service_stop,
+            ai_service_history,
+            ai_service_clear
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

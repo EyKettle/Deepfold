@@ -420,6 +420,8 @@ export const Card: Component<CardProps> = (props) => {
           "transition-duration": "0.15s",
           "transition-timing-function": "cubic-bezier(0.2, 0, 0, 1)",
           "will-change": "transform",
+          overflow: "hidden",
+          "overflow-wrap": "anywhere",
           ...props.style,
         }}
       >

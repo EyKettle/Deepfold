@@ -122,6 +122,9 @@
 .chat-markdown {
   display: grid;
 
+  * {
+    overflow-wrap: anywhere;
+  }
   h1 {
     justify-self: center;
   }
@@ -134,7 +137,7 @@
   }
 
   p {
-    margin-inline: 0;
+    margin: 0;
     padding-block: 0 !important;
     line-height: 1.5;
   }
@@ -155,17 +158,28 @@
     color: var(--color-theme-accent);
   }
 
-  ul {
+  ol {
+    margin-left: 1.5rem;
     margin-block: 0.5rem;
     padding-inline: 0;
+    ol,
     ul {
+      padding-left: 0;
       margin-block: 0;
-      padding-left: 1.25rem;
       padding-right: 0;
     }
+    li {
+      line-height: 1.5;
+    }
+  }
+
+  ul {
+    margin-left: 0.25rem;
+    margin-block: 0.5rem;
+    padding-inline: 0;
 
     li {
-      line-height: 1.8;
+      line-height: 1.5;
       list-style: none;
     }
     li:not(:has(input[type="checkbox"]))::before {

@@ -1,5 +1,4 @@
 import { createRoot, JSXElement } from "solid-js";
-import { insert } from "solid-js/web";
 
 export function separateValueAndUnit(
   cssValue: string

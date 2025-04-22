@@ -1,4 +1,7 @@
-use std::{ fs::{ self, File }, io::{ Read, Write } };
+use std::{
+    fs::{self, File},
+    io::{Read, Write},
+};
 
 #[tauri::command]
 pub fn read_path(path: &str) -> Result<String, String> {

@@ -138,8 +138,18 @@ body {
   --color-chat-other-back-default: var(--color-surface-hover);
   --color-chat-other-text-default: var(--color-theme-text);
 
+  /* 自定义变量 */
+  --color-msg-error-text: #9c0e0e;
+  --color-msg-error-back: #ff9e9e;
+  --color-msg-warn-text: #644312;
+  --color-msg-warn-back: #e9c679;
+  --color-msg-info-text: #0c2d5e;
+  --color-msg-info-back: #86b4e9;
   --color-dev-text: #720e0e;
   --color-dev-back: #e2a5a5;
+  --color-msg-nothing-text: var(--color-theme-text);
+  --color-msg-nothing-back: var(--color-surface-dark);
+  /* 自定义变量 */
 
   transition: all 0.2s;
   height: 100%;
@@ -199,8 +209,17 @@ html {
 
     --color-switch-hover: rgba(255, 255, 255, 0.06);
 
+    /* 自定义变量 */
+    --color-msg-error-back: #9c0e0e;
+    --color-msg-error-text: #ff9e9e;
+    --color-msg-warn-back: #644312;
+    --color-msg-warn-text: #e9c679;
+    --color-msg-info-back: #0c2d5e;
+    --color-msg-info-text: #86b4e9;
     --color-dev-text: #f85555;
     --color-dev-back: #632020;
+    --color-msg-nothing-back: #272727;
+    /* 自定义变量 */
 
     #page-setting {
       --color-switch-hover: unset;

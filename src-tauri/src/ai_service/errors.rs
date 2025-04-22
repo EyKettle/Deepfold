@@ -1,22 +1,24 @@
-use std::{ error::Error, fmt };
+use thiserror::Error;
 
 #[derive(Debug)]
-pub enum AiServiceErrors {
-    NotInitialized,
-    OpenAIError(String),
-    APIError(String),
-    ContentError(String),
+pub enum Parameter {
+    Endpoint,
+    APIKey,
+    ModelName,
 }
 
-impl fmt::Display for AiServiceErrors {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AiServiceErrors::NotInitialized => write!(f, "Not initialized"),
-            AiServiceErrors::OpenAIError(e) => write!(f, "OpenAI Error: {}", e),
-            AiServiceErrors::APIError(e) => write!(f, "API Error: {}", e),
-            AiServiceErrors::ContentError(e) => write!(f, "Content Error: {}", e),
-        }
-    }
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("No AppHandle")]
+    NoAppHandle,
+    #[error("Unexpected streaming")]
+    UnexpectedStream,
+    #[error("Empty Parameter: {0:?}")]
+    EmptyParameter(Parameter),
+    #[error("Fail to emit event: {0}")]
+    EmitFailed(tauri::Error),
+    #[error("Eventsource Error: {0}")]
+    Eventsource(reqwest_eventsource::Error),
+    #[error("Reqwest Error: {0}")]
+    Reqwest(reqwest_eventsource::CannotCloneRequestError),
 }
-
-impl Error for AiServiceErrors {}

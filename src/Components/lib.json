@@ -1,5 +1,5 @@
 {
-  "version": "0.0.18",
+  "version": "0.0.19",
   "changed": [
     "./app.css",
     "./markdown.css",
@@ -7,7 +7,10 @@
       "target": "./chatInputBox.tsx",
       "desc": "adjust textarea duration to 0.4s"
     },
-    { "target": "./chat/MessageUtils.tsx", "desc": "wrap a loading" }
+    {
+      "target": "./chat/MessageUtils.tsx",
+      "desc": "wrap a loading and add custom rule"
+    }
   ],
   "tempFix": [{ "target": "./card.tsx", "desc": "for disable shadow" }]
 }

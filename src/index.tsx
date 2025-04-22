@@ -2,6 +2,7 @@
 import { render } from "solid-js/web";
 import App from "./App";
 import { webviewWindow } from "@tauri-apps/api";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 webviewWindow
   .getCurrentWebviewWindow()
@@ -10,5 +11,12 @@ webviewWindow
     if (theme === "dark") document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   });
+
+document.addEventListener("click", (e) => {
+  if (e.target instanceof HTMLAnchorElement) {
+    e.preventDefault();
+    openUrl((e.target as HTMLAnchorElement).href);
+  }
+});
 
 render(() => <App />, document.getElementById("root") as HTMLElement);

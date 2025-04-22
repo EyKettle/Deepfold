@@ -164,8 +164,9 @@ const HomePage: Component<homePageProps> = (props) => {
         "box-sizing": "border-box",
         "padding-inline": "0.5rem",
         "--color-border-default": "transparent",
+        "justify-content": "start",
       }}
-      snapOffset={750}
+      snapOffset={44}
       showupMotion={(bubble) =>
         new Promise<void>((resolve) => {
           animate(

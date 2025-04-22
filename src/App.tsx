@@ -1,4 +1,4 @@
-import { createSignal, onMount } from "solid-js";
+import { createRoot, createSignal, onMount } from "solid-js";
 
 import { AppWindow } from "./controls/AppWindow";
 
@@ -7,7 +7,7 @@ import SettingPage from "./pages/SettingPage";
 
 import "./App.css";
 import {
-  botConfigTemples,
+  botConfigTemples as botConfigTemplates,
   createKeyBinding,
   parseServiceError as catchServiceError,
   Version,
@@ -19,6 +19,7 @@ import { PageContainer } from "./components/pageContainer";
 import { ChatMessage, Sender } from "./components/chat/chatMessageBox";
 import { animateMini } from "motion";
 import { createMarkdownMessage } from "./components/chat/MessageUtils";
+import MessageStatusBar from "./controls/MessageStatusBar";
 
 enum Pages {
   SettingPage = 0,
@@ -28,10 +29,13 @@ enum Pages {
 function App() {
   let version: Version = {
     code: "DEV",
-    number: "0.1.3",
+    number: "0.1.4",
   };
+
+  const [messages, setMessages] = createSignal<Message[]>([]);
+
   onMount(async () => {
-    botConfigTemples("SiliconCloud").then((config) => {
+    botConfigTemplates("OpenAIGemini").then((config) => {
       invoke("ai_service_init", {
         endpoint: config.endpoint,
         apiKey: config.apiKey,
@@ -144,7 +148,6 @@ function App() {
   // listen<string>("message_add", (event) => messageAdd(event.payload));
   // listen<string>("message_push", (event) => messagePush(event.payload));
   // listen<MsgTip>("message_tip", (event) => messageTip(event.payload));
-
   const handleSubmit = (text: string): boolean => {
     append({ sender: Sender.Own, content: text });
     scrollToBottom();
@@ -176,21 +179,44 @@ function App() {
         }
         markdownMessage.push(e.payload);
       });
-      const unlistenError = await listen<string>(`${hookId}_error`, (e) => {
-        // TODO: error display logic
-        markdownMessage.push(`出错了: ${e.payload}`);
-        unlisten();
-        unlistenReason();
-        unlistenError();
-        unlistenEnd();
+      const unlistenError = await listen<
+        | string
+        | {
+            type: "RequestSending";
+            detail: string;
+          }
+      >(`${hookId}_error`, (e) => {
+        if (typeof e.payload === "object") {
+          markdownMessage.setBar(
+            <div class="chat-markdown" style={{ "user-select": "none" }}>
+              <p style={{ "font-weight": "bold" }}>无正常响应</p>
+              <div style={{ display: "inline-flex", gap: "8px" }}>
+                <p style={{ "flex-shrink": 0 }}>URL:</p>
+                <a href={e.payload.detail}>{e.payload.detail}</a>
+              </div>
+            </div>
+          );
+        } else {
+          append({ sender: Sender.System, content: "• 出现问题" });
+          append({ sender: Sender.System, content: e.payload });
+        }
+        stop();
       });
-      const unlistenEnd = await listen(`${hookId}_end`, () => {
-        unlisten();
-        unlistenReason();
-        unlistenError();
-        unlistenEnd();
-        markdownMessage.over();
-      });
+      const unlistenEnd = await listen<StreamEndMessage>(
+        `${hookId}_end`,
+        (e) => {
+          setMessages(e.payload.messages);
+          if (e.payload.interrupted) {
+            markdownMessage.setBar(
+              createRoot((dispose) => {
+                dispose();
+                return <MessageStatusBar label="打断" type="nothing" />;
+              })
+            );
+          }
+          stop();
+        }
+      );
       invoke("ai_service_send", {
         content: text,
         hookId,
@@ -198,6 +224,13 @@ function App() {
         catchServiceError(e);
         markdownMessage.push("程序运行错误");
       });
+      const stop = () => {
+        unlisten();
+        unlistenReason();
+        unlistenError();
+        unlistenEnd();
+        markdownMessage.over();
+      };
       resolve();
     });
 
@@ -308,9 +341,10 @@ function App() {
       callback: (e) => {
         e.preventDefault();
         invoke("ai_service_clear")
-          .then(() =>
-            append({ sender: Sender.System, content: "清除聊天记录" })
-          )
+          .then(() => {
+            append({ sender: Sender.System, content: "清除聊天记录" });
+            setMessages([]);
+          })
           .catch(catchServiceError);
       },
     },
@@ -318,15 +352,16 @@ function App() {
       key: "F5",
       keyModifiers: "Shift",
       callback: () => {
-        botConfigTemples("SiliconCloud").then((config) => {
+        botConfigTemplates("OpenAIGemini").then((config) => {
           invoke("ai_service_reset", {
             endpoint: config.endpoint,
             apiKey: config.apiKey,
             modelName: config.modelName,
           })
-            .then(() =>
-              append({ sender: Sender.System, content: "重置服务配置" })
-            )
+            .then(() => {
+              append({ sender: Sender.System, content: "重置服务配置" });
+              scrollToBottom();
+            })
             .catch(catchServiceError);
         });
       },
@@ -349,6 +384,7 @@ function App() {
 
   let append: (info: ChatMessage, open?: boolean) => number;
   let set: (index: number, content: any, align?: boolean) => void;
+  let close: (index: number) => void;
   let clearHistory: () => void;
   let alignBottom: (sudden?: boolean) => void;
   let scrollToBottom: () => void;
@@ -500,11 +536,12 @@ function App() {
           "will-change": "opacity, transform, filter",
         }}
       >
-        <SettingPage version={version} />
+        <SettingPage version={version} messages={messages()} />
         <HomePage
-          getOps={(a, s, _cs, cr, ab, b) => {
+          getOps={(a, s, cs, cr, ab, b) => {
             append = a;
             set = s;
+            close = cs;
             clearHistory = cr;
             alignBottom = ab;
             scrollToBottom = b;
