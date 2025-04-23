@@ -11,6 +11,7 @@ interface MemoVlistProps {
   ref?: (vlist: VListHandle) => void;
   data: any[];
   children: (item: any, index: number) => JSXElement;
+  class?: string;
   style?: JSX.CSSProperties;
   horizontal?: boolean;
   memoList?: Map<number, Element | JSXElement>;
@@ -36,6 +37,7 @@ const MemoVlist: Component<MemoVlistProps> = (props) => {
       ref={(e) => {
         if (e && props.ref) props.ref(e);
       }}
+      class={props.class}
       style={{
         display: "flex",
         "flex-direction": "column",

@@ -1,5 +1,5 @@
 {
-  "version": "0.0.19",
+  "version": "0.0.21",
   "changed": [
     "./app.css",
     "./markdown.css",
@@ -10,7 +10,7 @@
     {
       "target": "./chat/MessageUtils.tsx",
       "desc": "wrap a loading and add custom rule"
-    }
-  ],
-  "tempFix": [{ "target": "./card.tsx", "desc": "for disable shadow" }]
+    },
+    { "target": "./card.tsx", "desc": "Disable shadow and extend on:event" }
+  ]
 }

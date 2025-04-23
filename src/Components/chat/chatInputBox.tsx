@@ -4,6 +4,7 @@ import { Button } from "../button";
 interface ChatInputBoxProps {
   showed?: boolean;
   fontSize?: string;
+  class?: string;
   style?: JSX.CSSProperties;
   placeHolder?: string;
   submitLabel?: string;
@@ -85,6 +86,7 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
     <div
       aria-disabled={!props.showed}
       ref={(e) => (element = e)}
+      class={props.class}
       style={{
         display: "flex",
         "flex-direction": "column",

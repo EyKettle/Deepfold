@@ -1,13 +1,21 @@
-import { Component, For } from "solid-js";
+import { Component, For, Signal } from "solid-js";
 
 import { Version } from "../utils/debugger";
 import SettingSwitch from "../controls/SettingSwitch";
 import { webviewWindow, app } from "@tauri-apps/api";
-import { Card } from "../components/card";
+import InputBox from "../components/inputBox";
+import SettingCard from "../controls/SettingCard";
+import { Button } from "../components/button";
 
 interface SettingPageProps {
   version: Version;
   messages: Message[];
+  aiConfig: Signal<ServiceConfig>;
+  operations: {
+    back: () => void;
+    clearMessages: () => void;
+    resetService: () => void;
+  };
 }
 
 const SettingPage: Component<SettingPageProps> = (props) => {
@@ -122,16 +130,55 @@ const SettingPage: Component<SettingPageProps> = (props) => {
           },
         ]}
       </SettingSwitch>
-      <Card
-        interactType="hover"
-        effect="none"
-        disableShadow={true}
-        description={"当前聊天记录"}
+      <SettingCard title="AI 模型">
+        <InputBox
+          placeholder="URL"
+          value={props.aiConfig[0]().endpoint}
+          onChange={(e) => {
+            if (!e.target.value) return;
+            props.aiConfig[1]((prev) => {
+              let value = { ...prev };
+              value.endpoint = e.target.value;
+              return value;
+            });
+          }}
+        />
+        <InputBox
+          placeholder="密钥"
+          value={props.aiConfig[0]().apiKey}
+          hide={true}
+          onChange={(e) => {
+            if (!e.target.value) return;
+            props.aiConfig[1]((prev) => {
+              let value = { ...prev };
+              value.apiKey = e.target.value;
+              return value;
+            });
+          }}
+        />
+        <InputBox
+          placeholder="模型名称"
+          value={props.aiConfig[0]().modelName}
+          onChange={(e) => {
+            if (!e.target.value) return;
+            props.aiConfig[1]((prev) => {
+              let value = { ...prev };
+              value.modelName = e.target.value;
+              return value;
+            });
+          }}
+        />
+        <Button
+          label="重置"
+          onClick={() => {
+            props.operations.resetService();
+            props.operations.back();
+          }}
+        />
+      </SettingCard>
+      <SettingCard
+        title="后端记录"
         style={{
-          cursor: "auto",
-          gap: "1rem",
-          "transition-duration": "0.4s",
-          border: "none",
           "padding-bottom": "1.5rem",
         }}
       >
@@ -141,20 +188,25 @@ const SettingPage: Component<SettingPageProps> = (props) => {
             <p style={{ opacity: 0.6, "margin-bottom": "0.5rem" }}>没有消息</p>
           }
         >
-          {(item) => (
-            <div
-              style={{
-                width: "100%",
-                "padding-inline": "8px",
-                "box-sizing": "border-box",
-              }}
-            >
-              <h3 style={{ "text-align": "right" }}>{item.role}</h3>
-              <p style={{ "text-align": "left" }}>{item.content}</p>
-            </div>
+          {(item, index) => (
+            <>
+              {index() === 0 ? (
+                <Button label="清空" onClick={props.operations.clearMessages} />
+              ) : null}
+              <div
+                style={{
+                  width: "100%",
+                  "padding-inline": "8px",
+                  "box-sizing": "border-box",
+                }}
+              >
+                <h3 style={{ "text-align": "right" }}>{item.role}</h3>
+                <p style={{ "text-align": "left" }}>{item.content}</p>
+              </div>
+            </>
           )}
         </For>
-      </Card>
+      </SettingCard>
     </div>
   );
 };

@@ -23,6 +23,7 @@ interface ButtonProps {
     active: string;
   };
   borderRadius?: string;
+  class?: string;
   style?: JSX.CSSProperties;
   iconStyle?: JSX.CSSProperties[];
   disabled?: boolean;
@@ -141,6 +142,7 @@ export const Button: Component<ButtonProps> = (props) => {
   return (
     <button
       ref={(e) => (element = e)}
+      class={props.class}
       style={{
         display: "inline-grid",
         "grid-template-columns": `${props.icon && defaultStyle().fontSize} ${

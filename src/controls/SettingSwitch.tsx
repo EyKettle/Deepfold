@@ -1,6 +1,6 @@
 import { Component, JSX } from "solid-js";
-import { Card } from "../components/card";
 import { Switch, SwitchItem } from "../components/switch";
+import SettingCard from "./SettingCard";
 
 interface SettingSwitchProps {
   title: string;
@@ -12,18 +12,7 @@ interface SettingSwitchProps {
 
 const SettingSwitch: Component<SettingSwitchProps> = (props) => {
   return (
-    <Card
-      interactType="hover"
-      effect="none"
-      disableShadow={true}
-      description={props.title}
-      style={{
-        cursor: "auto",
-        gap: "1rem",
-        "transition-duration": "0.4s",
-        border: "none",
-      }}
-    >
+    <SettingCard title={props.title}>
       <Switch
         default={props.default}
         border={{ width: "0", color: "unset" }}
@@ -38,7 +27,7 @@ const SettingSwitch: Component<SettingSwitchProps> = (props) => {
         children={props.children}
         onChange={props.onChange}
       />
-    </Card>
+    </SettingCard>
   );
 };
 

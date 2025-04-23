@@ -2,12 +2,14 @@ import { Component, JSX, Show } from "solid-js";
 
 interface LoadingProps {
   text?: string;
+  class?: string;
   style?: JSX.CSSProperties;
 }
 
 const Loading: Component<LoadingProps> = (props) => {
   return (
     <div
+      class={props.class}
       style={{
         gap: "1rem",
         display: "flex",

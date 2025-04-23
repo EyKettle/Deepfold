@@ -12,6 +12,7 @@ type PageInfo = {
 interface PageContainerProps {
   children: JSXElement[];
   pageInfos: PageInfo[];
+  class?: string;
   style?: JSX.CSSProperties;
   pageInit?: (page: HTMLDivElement, index: number) => void;
   loadedMotion?: (container: HTMLDivElement) => void;
@@ -210,6 +211,7 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
   return (
     <div
       ref={(e) => (container = e)}
+      class={props.class}
       style={{
         height: "100%",
         width: "100%",

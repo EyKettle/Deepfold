@@ -117,3 +117,12 @@
     background-color: #c00000;
   }
 }
+
+.window-duration > * {
+  transition-duration: 0.4s !important;
+}
+
+.full-width-box > * {
+  box-sizing: border-box;
+  width: 100%;
+}

@@ -4,7 +4,9 @@ interface InputBoxProps {
   placeholder?: string;
   value?: string;
   multiline?: boolean;
+  class?: string;
   style?: JSX.CSSProperties;
+  hide?: boolean;
   onFocus?: (
     event: FocusEvent & {
       currentTarget: HTMLInputElement;
@@ -37,7 +39,8 @@ const InputBox: Component<InputBoxProps> = (props) => {
   return (
     <input
       ref={(e) => (element = e)}
-      type="text"
+      type={props.hide ? "password" : "text"}
+      class={props.class}
       style={{
         border: "none",
         "font-size": "1.125rem",

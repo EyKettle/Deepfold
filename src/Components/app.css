@@ -109,9 +109,9 @@ body {
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-shadow-auto: none;
 
-  --color-button-default: var(--color-surface-light);
-  --color-button-hover: white;
-  --color-button-active: #ddd;
+  --color-button-default: #eee;
+  --color-button-hover: #e2e2e2;
+  --color-button-active: #ccc;
   --color-button-main-default: #eb9a9a;
   --color-button-main-hover: #f7b5b5;
   --color-button-main-active: #c97878;
@@ -131,7 +131,7 @@ body {
   --color-switch-active: var(--color-theme-accent-background);
   --color-switch-onActive: var(--color-theme-accent-text);
 
-  --color-input-default: var(--color-surface-darker);
+  --color-input-default: var(--color-surface-dark);
 
   --color-chat-own-back-default: var(--color-theme-accent-background);
   --color-chat-own-text-default: var(--color-theme-accent-text);
@@ -193,8 +193,8 @@ html {
     --color-shadow: rgba(0, 0, 0, 0.3);
     --color-shadow-auto: var(--color-shadow);
 
-    --color-button-default: #2e2e2e;
-    --color-button-hover: #3c3c3c;
+    --color-button-default: #3d3d3d;
+    --color-button-hover: #494949;
     --color-button-active: #2a2a2a;
     --color-button-main-default: #8b3737;
     --color-button-main-hover: #a74d4d;
@@ -206,6 +206,8 @@ html {
     --color-border-default: rgba(255, 255, 255, 0.1);
     --color-border-active: rgba(255, 255, 255, 0.15);
     --color-border-default-down: var(--color-border-default);
+
+    --color-input-default: var(--color-surface-default);
 
     --color-switch-hover: rgba(255, 255, 255, 0.06);
 

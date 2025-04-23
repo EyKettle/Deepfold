@@ -1,11 +1,12 @@
 import { createEffect, onCleanup } from "solid-js";
-import { MsgInfo, MsgPosition, MsgSender } from "../controls/MessageBox";
 import { invoke } from "@tauri-apps/api/core";
 import { ServiceConfig } from "../Ai/CoreService";
 
+export type VersionNumber = `${number}.${number}.${number}`;
+
 export type Version = {
   code: "REL" | "BET" | "DEV";
-  number: `${number}.${number}.${number}`;
+  number: VersionNumber;
 };
 
 export type ServiceError = {

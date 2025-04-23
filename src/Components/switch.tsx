@@ -23,7 +23,10 @@ interface SwitchProps {
   };
   backgroundColor?: string;
   fontSize?: string;
+  class?: string;
   style?: JSX.CSSProperties;
+  itemClass?: string;
+  itemStyle?: JSX.CSSProperties;
   onChange?: (index: number) => void;
 }
 
@@ -36,6 +39,7 @@ interface SwitchItemProps {
   event: () => void;
   hooks: (reset: () => void) => void;
   fontSize?: string;
+  class?: string;
   style?: JSX.CSSProperties;
 }
 
@@ -130,6 +134,7 @@ const SwitchItem: Component<SwitchItemProps> = (props) => {
   return (
     <button
       ref={(e) => (element = e)}
+      class={props.class}
       style={{
         "flex-grow": 1,
         display: "grid",
@@ -215,6 +220,7 @@ export const Switch: Component<SwitchProps> = (props) => {
 
   return (
     <div
+      class={props.class}
       style={{
         display: "inline-flex",
         "min-height": "2.5rem",
@@ -246,6 +252,8 @@ export const Switch: Component<SwitchProps> = (props) => {
             }}
             disabled={props.disabled}
             fontSize={props.fontSize}
+            class={props.itemClass}
+            style={props.itemStyle}
           />
         )}
       </For>

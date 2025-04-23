@@ -17,7 +17,7 @@ import { listen } from "@tauri-apps/api/event";
 import ChatInputBox from "./components/chat/chatInputBox";
 import { PageContainer } from "./components/pageContainer";
 import { ChatMessage, Sender } from "./components/chat/chatMessageBox";
-import { animateMini } from "motion";
+import { animate, animateMini } from "motion";
 import { createMarkdownMessage } from "./components/chat/MessageUtils";
 import MessageStatusBar from "./controls/MessageStatusBar";
 
@@ -29,13 +29,19 @@ enum Pages {
 function App() {
   let version: Version = {
     code: "DEV",
-    number: "0.1.4",
+    number: "0.1.5",
   };
 
   const [messages, setMessages] = createSignal<Message[]>([]);
+  const [aiConfig, setAiConfig] = createSignal<ServiceConfig>({
+    endpoint: "",
+    apiKey: "",
+    modelName: "",
+  });
 
   onMount(async () => {
     botConfigTemplates("OpenAIGemini").then((config) => {
+      setAiConfig(config);
       invoke("ai_service_init", {
         endpoint: config.endpoint,
         apiKey: config.apiKey,
@@ -44,110 +50,12 @@ function App() {
     });
   });
 
-  // let getMessages: () => MsgInfo[];
-  // let setMessage: (text: string, index: number) => void;
-  // let appendMessage: (newMessage: newMessage) => number;
-  // let pushStr: (text: string, index: number) => void;
-  // let tipPop: (tip: MsgTip, index: number) => void;
-
   const [showSettings, setShowSettings] = createSignal(false);
   const handleShowSettings = () => {
     setShowSettings(!showSettings());
     switchTo(showSettings() ? Pages.SettingPage : Pages.HomePage);
+    if (!showSettings()) inputArea.focus();
   };
-  // const content: PageWrapper[] = [
-  //   {
-  //     id: "page-home",
-  //     title: "主页",
-  //     position: [0, 0],
-  //     content: (
-  //       <Dynamic
-  //         component={homePage}
-  //         commands={(msgs, set, append, push, tip) => {
-  //           getMessages = msgs;
-  //           setMessage = set;
-  //           appendMessage = append;
-  //           pushStr = push;
-  //           tipPop = tip;
-  //         }}
-  //       />
-  //     ),
-  //   },
-  //   {
-  //     id: "page-setting",
-  //     title: "设置",
-  //     position: [0, -1],
-  //     defaultStyle: {
-  //       opacity: 0,
-  //       filter: "blur(16px)",
-  //       translate: "-50vw -50vh",
-  //       scale: 0.1,
-  //     },
-  //     content: settingPage,
-  //   },
-  // ];
-
-  // const messageAdd = (text: string) => {
-  //   messageIndex = appendMessage({
-  //     sender: "bot",
-  //     content: text,
-  //   } as MsgInfo);
-  // };
-  // const messagePush = (text: string) => {
-  //   if (!messageIndex) {
-  //     console.error("Message index not found");
-  //     return;
-  //   }
-  //   pushStr(text, messageIndex);
-  // };
-  // const messageTip = (tip: MsgTip) => {
-  //   if (!messageIndex) {
-  //     console.error("Message index not found");
-  //     return;
-  //   }
-  //   tipPop(tip, messageIndex);
-  // };
-
-  // let aiService: CoreService | null = null;
-  // onMount(async () => {
-  //   //#region 生产环境代码
-  //   // appendMessage({
-  //   //   sender: "system",
-  //   //   content:
-  //   //     "将进行初始化，请在输入框内提交参数\n当前版本数据只临时存储到内存中且只能进行一次配置",
-  //   // } as MsgInfo);
-  //   // appendMessage({
-  //   //   sender: "system",
-  //   //   content: "• 需要请求地址",
-  //   // } as MsgInfo);
-  //   //#endregion
-
-  //   //#region 测试环境代码
-  //   appendMessage({
-  //     sender: "system",
-  //     content: "正在使用测试API",
-  //   } as MsgInfo);
-  //   const config = await botConfigTemples("SiliconCloud");
-  //   aiService = new CoreService(
-  //     config,
-  //     (txt) => {
-  //       appendMessage({
-  //         sender: "system",
-  //         content: txt,
-  //       } as MsgInfo);
-  //     },
-  //     (msg) => messageAdd(msg),
-  //     (msg) => messagePush(msg),
-  //     (tip) => messageTip(tip)
-  //   );
-  //   aiService.init();
-  //   //#endregion
-  // });
-
-  // let messageIndex: number | null = null;
-  // listen<string>("message_add", (event) => messageAdd(event.payload));
-  // listen<string>("message_push", (event) => messagePush(event.payload));
-  // listen<MsgTip>("message_tip", (event) => messageTip(event.payload));
   const handleSubmit = (text: string): boolean => {
     append({ sender: Sender.Own, content: text });
     scrollToBottom();
@@ -235,88 +143,28 @@ function App() {
     });
 
     return true;
-
-    //#region 生产环境-初始化
-    // if (!botConfig) {
-    //   botConfig = {
-    //     apiKey: "",
-    //     endpoint: "",
-    //     model: "",
-    //   };
-    // }
-    // if (!botConfig.endpoint) {
-    //   botConfig.endpoint = text;
-    //   appendMessage({
-    //     sender: "system",
-    //     content: "• 需要API密钥",
-    //   } as MsgInfo);
-    //   return;
-    // }
-    // if (!botConfig.apiKey) {
-    //   botConfig.apiKey = text;
-    //   appendMessage({
-    //     sender: "system",
-    //     content: "• 需要指定模型",
-    //   } as MsgInfo);
-    //   return;
-    // }
-    // if (!botConfig.model) {
-    //   botConfig.model = text;
-
-    //   invoke("ai_service_init", {
-    //     apiBase: botConfig.endpoint,
-    //     apiKey: botConfig.apiKey,
-    //     modelName: botConfig.model,
-    //   }).catch((error) => {
-    //     appendMessage({
-    //       sender: "system",
-    //       content: `初始化失败: ${(error as Error).message}`,
-    //     } as MsgInfo);
-    //     return;
-    //   });
-
-    //   appendMessage({
-    //     sender: "system",
-    //     content: "初始化完成",
-    //   } as MsgInfo);
-    //   return;
-    // }
-    //#endregion
-
-    // appendMessage({
-    //   sender: "user",
-    //   content: text,
-    // } as MsgInfo);
-
-    // invoke("ai_send_message", {
-    //   message: text,
-    // }).catch((error: Error) => {
-    //   appendMessage({
-    //     sender: "system",
-    //     content: `发送失败，错误信息:\n${error.message}`,
-    //   } as MsgInfo);
-    // });
-
-    // const newHistory = await sendChatMessage(
-    //   text,
-    //   (response) => {
-    //     messageIndex = appendMessage({
-    //       sender: response.sender,
-    //       content: response.content,
-    //     } as MsgInfo);
-    //   },
-    //   (content) => {
-    //     updateMessage(content, messageIndex);
-    //   },
-    //   (tip) => {
-    //     tipPop(tip, messageIndex);
-    //   },
-    //   chatHistory()
-    // );
-
-    // setChatHistory(newHistory);
   };
 
+  const clearMessages = () => {
+    invoke("ai_service_clear")
+      .then(() => {
+        append({ sender: Sender.System, content: "清除聊天记录" });
+        setMessages([]);
+      })
+      .catch(catchServiceError);
+  };
+  const resetService = () => {
+    invoke("ai_service_reset", {
+      endpoint: aiConfig().endpoint,
+      apiKey: aiConfig().apiKey,
+      modelName: aiConfig().modelName,
+    })
+      .then(() => {
+        append({ sender: Sender.System, content: "重置服务配置" });
+        scrollToBottom();
+      })
+      .catch(catchServiceError);
+  };
   createKeyBinding([
     {
       key: "F9",
@@ -340,30 +188,14 @@ function App() {
       state: "keydown",
       callback: (e) => {
         e.preventDefault();
-        invoke("ai_service_clear")
-          .then(() => {
-            append({ sender: Sender.System, content: "清除聊天记录" });
-            setMessages([]);
-          })
-          .catch(catchServiceError);
+        clearMessages();
       },
     },
     {
       key: "F5",
       keyModifiers: "Shift",
       callback: () => {
-        botConfigTemplates("OpenAIGemini").then((config) => {
-          invoke("ai_service_reset", {
-            endpoint: config.endpoint,
-            apiKey: config.apiKey,
-            modelName: config.modelName,
-          })
-            .then(() => {
-              append({ sender: Sender.System, content: "重置服务配置" });
-              scrollToBottom();
-            })
-            .catch(catchServiceError);
-        });
+        resetService();
       },
     },
     {
@@ -425,7 +257,7 @@ function App() {
                   ease: [0, 0, 0, 1],
                 }
               );
-              animateMini(
+              animate(
                 prev,
                 {
                   scale: 0.8,
@@ -446,15 +278,17 @@ function App() {
                   ease: [0, 0, 0, 1],
                 }
               );
-              animateMini(
+              animate(
                 cur,
                 {
                   scale: [0.2, 1],
-                  translate: ["-40vw -40vh", "0 0"],
+                  x: ["-40vw", 0],
+                  y: ["-40vh", 0],
                 },
                 {
-                  duration: 0.3,
-                  ease: [0.5, 0, 0, 1],
+                  type: "spring",
+                  duration: 0.4,
+                  bounce: 0.2,
                 }
               ).then(() => {
                 resolve();
@@ -471,11 +305,12 @@ function App() {
                   ease: [0, 0, 0, 1],
                 }
               );
-              animateMini(
+              animate(
                 prev,
                 {
                   scale: 0,
-                  translate: "-50vw -50vh",
+                  x: "-50vw",
+                  y: "-50vh",
                 },
                 {
                   duration: 0.3,
@@ -493,7 +328,7 @@ function App() {
                   ease: [0, 0, 0, 1],
                 }
               );
-              animateMini(
+              animate(
                 cur,
                 {
                   scale: [0.8, 1],
@@ -536,7 +371,16 @@ function App() {
           "will-change": "opacity, transform, filter",
         }}
       >
-        <SettingPage version={version} messages={messages()} />
+        <SettingPage
+          version={version}
+          messages={messages()}
+          aiConfig={[aiConfig, setAiConfig]}
+          operations={{
+            back: () => handleShowSettings(),
+            clearMessages,
+            resetService,
+          }}
+        />
         <HomePage
           getOps={(a, s, cs, cr, ab, b) => {
             append = a;

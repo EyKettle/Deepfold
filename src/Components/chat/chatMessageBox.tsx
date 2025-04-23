@@ -29,6 +29,7 @@ enum BubblePosition {
 interface ChatMessageBubbleProps {
   children: ChatMessage;
   fontSize?: string;
+  class?: string;
   style?: JSX.CSSProperties;
   position: BubblePosition;
   ref?: (appearanceRef: HTMLDivElement, elementRef: HTMLDivElement) => void;
@@ -123,6 +124,7 @@ const ChatMessageBubble: Component<ChatMessageBubbleProps> = (props) => {
       }}
     >
       <div
+        class={props.class}
         style={{
           display: "inline-flex",
           "text-align": "start",
@@ -147,7 +149,9 @@ interface ChatMessageBoxProps {
   ref?: (vlist: VirtualizerHandle) => void;
   initData?: ChatMessage[];
   fontSize?: string;
+  class?: string;
   style?: JSX.CSSProperties;
+  bubbleClass?: string;
   bubbleStyle?: JSX.CSSProperties;
   paddingTop?: string;
   paddingBottom?: string;
@@ -365,6 +369,7 @@ const ChatMessageBox: Component<ChatMessageBoxProps> = (props) => {
         if (vlist) props.ref?.(vlist);
       }}
       data={renderList()}
+      class={props.class}
       style={{
         "font-size": `${props.fontSize ?? "1rem"}`,
         "user-select": "text",
@@ -399,6 +404,7 @@ const ChatMessageBox: Component<ChatMessageBoxProps> = (props) => {
             position={item.pos}
             fontSize={props.fontSize}
             children={item}
+            class={props.bubbleClass}
             style={props.bubbleStyle}
           />
         );
