@@ -97,7 +97,7 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
         "border-width": "0.0625rem",
         "border-bottom-width": "0",
         "border-color": "var(--color-border-default)",
-        "background-color": "var(--color-surface-hover)",
+        "background-color": "var(--color-solid-primary)",
         "box-shadow": "0 0.25rem 0.5rem var(--color-shadow)",
         "transition-property": "all",
         "transition-duration": "0.2s",

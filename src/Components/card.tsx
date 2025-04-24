@@ -59,8 +59,8 @@ export const Card: Component<CardProps> = (props) => {
       appearanceDiv.style.scale = "1";
       if (shadowBox) {
         shadowBox.style.translate = "0 0.0625rem";
-        shadowBox.style.filter = "blur(0.0625rem)";
-        shadowBox.style.opacity = "0.6";
+        shadowBox.style.filter = "blur(0)";
+        shadowBox.style.opacity = "0";
         shadowBox.style.scale = "1";
       }
       appearanceDiv.style.borderColor = "var(--color-border-default)";
@@ -216,12 +216,13 @@ export const Card: Component<CardProps> = (props) => {
       }}
       on:mouseenter={() => {
         if (props.disabled || isTouch) return;
+        if (shadowBox) {
+          shadowBox.style.translate = "0 0.625rem";
+          shadowBox.style.filter = "blur(0.25rem)";
+          shadowBox.style.opacity = "0.6";
+        }
         if (props.effect && EFFECT_MAP.float.has(props.effect)) {
           appearanceDiv.style.scale = "1.1";
-          if (shadowBox) {
-            shadowBox.style.translate = "0 0.625rem";
-            shadowBox.style.filter = "blur(0.25rem)";
-          }
         }
         appearanceDiv.style.borderColor = "var(--color-border-active)";
         appearanceDiv.parentElement!.style.zIndex = "2";
@@ -382,9 +383,9 @@ export const Card: Component<CardProps> = (props) => {
             inset: 0,
             "border-radius": "1rem",
             "background-color": "var(--color-shadow)",
-            opacity: 0.6,
+            opacity: 0,
             translate: "0 0.0625rem",
-            filter: "blur(0.0625rem)",
+            filter: "blur(0)",
             transition: "all 0.15s cubic-bezier(0.2, 0, 0, 1)",
             "pointer-events": "none",
           }}

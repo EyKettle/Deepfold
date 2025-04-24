@@ -4,8 +4,8 @@ use crate::ai_service::siliconflow_types::Message;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum MessageErrorType {
-    RequestSending,
     EmptyParameter,
+    RequestSending,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

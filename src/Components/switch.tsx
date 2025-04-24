@@ -28,6 +28,10 @@ interface SwitchProps {
   itemClass?: string;
   itemStyle?: JSX.CSSProperties;
   onChange?: (index: number) => void;
+  getOps?: (
+    switchTo: (index: number, noAction?: boolean) => void,
+    getSelected: () => number
+  ) => void;
 }
 
 interface SwitchItemProps {
@@ -208,15 +212,20 @@ const SwitchItem: Component<SwitchItemProps> = (props) => {
 
 export const Switch: Component<SwitchProps> = (props) => {
   const [activeIndex, setActiveIndex] = createSignal(props.default ?? 0);
-  const handleSwitch = (index: number) => {
-    const prev = activeIndex();
-    setActiveIndex(index);
-    resetHandles[prev]();
-    props.onChange?.(index);
-  };
+  const handleSwitch = (index: number) => switchTo(index);
+
   let resetHandles: (() => void)[] = Array(props.children.length).fill(() =>
     console.warn("Switch item not found")
   );
+
+  const switchTo = (index: number, noAction?: boolean) => {
+    const prev = activeIndex();
+    setActiveIndex(index);
+    resetHandles[prev]();
+    if (!noAction) props.onChange?.(index);
+  };
+  const getSelected = () => activeIndex();
+  props.getOps?.(switchTo, getSelected);
 
   return (
     <div

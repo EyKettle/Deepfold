@@ -119,6 +119,18 @@ impl AiService {
                         }
                         Some(Err(e)) => match e {
                             reqwest_eventsource::Error::StreamEnded => break,
+                            reqwest_eventsource::Error::InvalidStatusCode(s,e) => {
+                                app_handle
+                                    .emit(
+                                        &format!("{hook_id}_error"),
+                                        MessageError {
+                                            error_type:
+                                                MessageErrorType::RequestSending,
+                                            detail: reqwest_eventsource::Error::InvalidStatusCode(s, e).to_string(),
+                                        },
+                                    )
+                                    .map_err(Error::EmitFailed)?;
+                            }
                             reqwest_eventsource::Error::Transport(e) => {
                                 if e.is_request() {
                                     app_handle
@@ -127,20 +139,25 @@ impl AiService {
                                             MessageError {
                                                 error_type:
                                                     MessageErrorType::RequestSending,
-                                                detail: e
-                                                    .url()
-                                                    .map(|url| url.to_string())
-                                                    .unwrap_or_default(),
+                                                detail: reqwest_eventsource::Error::Transport(e).to_string(),
                                             },
                                         )
                                         .map_err(Error::EmitFailed)?;
+                                } else {
+                                    println!("{}", Error::Eventsource(reqwest_eventsource::Error::Transport(e)));
                                 }
                             }
-                            _ => {
-                                app_handle
-                                    .emit(&format!("{hook_id}_error"), format!("[event_error] {e}"))
-                                    .map_err(Error::EmitFailed)?;
-                                return Err(Error::Eventsource(e));
+                            reqwest_eventsource::Error::Utf8(e) => {
+                                println!("{}", Error::Eventsource(reqwest_eventsource::Error::Utf8(e)));
+                            }
+                            reqwest_eventsource::Error::Parser(e) => {
+                                println!("{}", Error::Eventsource(reqwest_eventsource::Error::Parser(e)));
+                            }
+                            reqwest_eventsource::Error::InvalidContentType(h,e) => {
+                                println!("{}", Error::Eventsource(reqwest_eventsource::Error::InvalidContentType(h,e)));
+                            }
+                            reqwest_eventsource::Error::InvalidLastEventId(e) => {
+                                println!("{}", Error::Eventsource(reqwest_eventsource::Error::InvalidLastEventId(e)));
                             }
                         },
                         _ => {}

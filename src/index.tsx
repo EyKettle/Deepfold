@@ -1,11 +1,11 @@
 /* @refresh reload */
 import { render } from "solid-js/web";
 import App from "./App";
-import { webviewWindow } from "@tauri-apps/api";
+import { window } from "@tauri-apps/api";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
-webviewWindow
-  .getCurrentWebviewWindow()
+window
+  .getCurrentWindow()
   .theme()
   .then((theme) => {
     if (theme === "dark") document.documentElement.classList.add("dark");

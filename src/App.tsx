@@ -20,6 +20,7 @@ import { ChatMessage, Sender } from "./components/chat/chatMessageBox";
 import { animate, animateMini } from "motion";
 import { createMarkdownMessage } from "./components/chat/MessageUtils";
 import MessageStatusBar from "./controls/MessageStatusBar";
+import { requestErrorTip } from "./controls/MessageWigets";
 
 enum Pages {
   SettingPage = 0,
@@ -103,76 +104,65 @@ function App() {
         }
         markdownMessage.push(e.payload);
       });
-      const unlistenError = await listen<string | BackendError>(
+      const unlistenError = await listen<BackendError>(
         `${hookId}_error`,
         (e) => {
-          if (typeof e.payload === "object") {
-            switch (e.payload.type) {
-              case "EmptyParameter":
-                const items = (e.payload.detail as string[]).map((value) => {
-                  switch (value) {
-                    case "Endpoint":
-                      return (
-                        <div
-                          style={{
-                            padding: "4px 8px",
-                            "border-radius": "8px",
-                            "background-color": "var(--color-msg-nothing-back)",
-                          }}
-                        >
-                          URL
-                        </div>
-                      );
-                    case "APIKey":
-                      return (
-                        <div
-                          style={{
-                            padding: "4px 8px",
-                            "border-radius": "8px",
-                            "background-color": "var(--color-msg-nothing-back)",
-                          }}
-                        >
-                          密钥
-                        </div>
-                      );
-                    case "ModelName":
-                      return (
-                        <div
-                          style={{
-                            padding: "4px 8px",
-                            "border-radius": "8px",
-                            "background-color": "var(--color-msg-nothing-back)",
-                          }}
-                        >
-                          模型名称
-                        </div>
-                      );
-                  }
-                });
-                markdownMessage.setBar(
-                  <div class="chat-markdown" style={{ "user-select": "none" }}>
-                    <p style={{ "font-weight": "bold" }}>空参数</p>
-                    <div style={{ display: "inline-flex", gap: "8px" }}>
-                      {items}
-                    </div>
+          switch (e.payload.type) {
+            case "EmptyParameter":
+              const items = (e.payload.detail as string[]).map((value) => {
+                switch (value) {
+                  case "Endpoint":
+                    return (
+                      <div
+                        style={{
+                          padding: "4px 8px",
+                          "border-radius": "8px",
+                          "background-color": "var(--color-msg-nothing-back)",
+                        }}
+                      >
+                        URL
+                      </div>
+                    );
+                  case "APIKey":
+                    return (
+                      <div
+                        style={{
+                          padding: "4px 8px",
+                          "border-radius": "8px",
+                          "background-color": "var(--color-msg-nothing-back)",
+                        }}
+                      >
+                        密钥
+                      </div>
+                    );
+                  case "ModelName":
+                    return (
+                      <div
+                        style={{
+                          padding: "4px 8px",
+                          "border-radius": "8px",
+                          "background-color": "var(--color-msg-nothing-back)",
+                        }}
+                      >
+                        模型名称
+                      </div>
+                    );
+                }
+              });
+              markdownMessage.setBar(
+                <div class="chat-markdown" style={{ "user-select": "none" }}>
+                  <p style={{ "font-weight": "bold" }}>空参数</p>
+                  <div style={{ display: "inline-flex", gap: "8px" }}>
+                    {items}
                   </div>
-                );
-                break;
-              case "RequestSending":
-                markdownMessage.setBar(
-                  <div class="chat-markdown" style={{ "user-select": "none" }}>
-                    <p style={{ "font-weight": "bold" }}>无正常响应</p>
-                    <div style={{ display: "inline-flex", gap: "8px" }}>
-                      <p style={{ "flex-shrink": 0 }}>URL:</p>
-                      <a href={e.payload.detail}>{e.payload.detail}</a>
-                    </div>
-                  </div>
-                );
-                break;
-            }
-          } else {
-            append({ sender: Sender.System, content: "• 出现问题" });
-            append({ sender: Sender.System, content: e.payload });
+                </div>
+              );
+              break;
+            case "RequestSending":
+              markdownMessage.setBar(
+                requestErrorTip("请求出错", e.payload.detail)
+              );
+              break;
           }
           stop();
         }

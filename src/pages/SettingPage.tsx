@@ -1,8 +1,8 @@
-import { Component, createEffect, For, Signal } from "solid-js";
+import { Component, For, onCleanup, onMount, Signal } from "solid-js";
 
 import { Version } from "../utils/debugger";
 import SettingSwitch from "../controls/SettingSwitch";
-import { webviewWindow, app } from "@tauri-apps/api";
+import { webviewWindow, app, window } from "@tauri-apps/api";
 import InputBox from "../components/inputBox";
 import SettingCard from "../controls/SettingCard";
 import { Button } from "../components/button";
@@ -19,6 +19,24 @@ interface SettingPageProps {
 }
 
 const SettingPage: Component<SettingPageProps> = (props) => {
+  let switchTheme: (index: number, noAction?: boolean) => void;
+  let getThemeIndex: () => number;
+  let unlisten: () => void;
+  onMount(async () => {
+    unlisten = await webviewWindow
+      .getCurrentWebviewWindow()
+      .onThemeChanged(({ payload: theme }) => {
+        console.log("changed", theme, Date.now());
+
+        if (getThemeIndex() === 1) {
+          if (theme === "dark") document.documentElement.classList.add("dark");
+          else document.documentElement.classList.remove("dark");
+        } else {
+          app.setTheme(getThemeIndex() === 0 ? "light" : "dark");
+        }
+      });
+  });
+  onCleanup(() => unlisten());
   return (
     <div
       id="page-setting"
@@ -30,7 +48,6 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         gap: "0.5rem",
         "box-sizing": "border-box",
         "padding-inline": "0.5rem",
-        "--color-shadow": "rgba(0, 0, 0, 0.15)",
         "--color-shadow-auto": "none",
         "padding-bottom": "2rem",
       }}
@@ -96,6 +113,10 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         switchStyle={{
           display: "grid",
           "grid-template-columns": "1fr 80px 1fr",
+        }}
+        getOps={(t, i) => {
+          switchTheme = t;
+          getThemeIndex = i;
         }}
       >
         {[

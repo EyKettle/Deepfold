@@ -13,7 +13,7 @@ const SettingCard: Component<SettingSwitchProps> = (props) => {
     <Card
       interactType="hover"
       effect="none"
-      disableShadow={true}
+      // disableShadow={true}
       description={props.title}
       style={{
         cursor: "auto",

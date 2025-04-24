@@ -8,6 +8,10 @@ interface SettingSwitchProps {
   default: number;
   switchStyle?: JSX.CSSProperties;
   onChange?: (index: number) => void;
+  getOps?: (
+    switchTo: (index: number, noAction?: boolean) => void,
+    getSelected: () => number
+  ) => void;
 }
 
 const SettingSwitch: Component<SettingSwitchProps> = (props) => {
@@ -26,6 +30,7 @@ const SettingSwitch: Component<SettingSwitchProps> = (props) => {
         fontSize="1rem"
         children={props.children}
         onChange={props.onChange}
+        getOps={props.getOps}
       />
     </SettingCard>
   );
