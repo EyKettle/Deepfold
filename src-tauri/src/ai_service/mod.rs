@@ -1,23 +1,12 @@
 use ai_calling::AiService;
-use serde::Serialize;
 use siliconflow_types::Message;
 use tauri::{async_runtime::spawn, Manager};
+
+use crate::utils::{ErrorInfo, ErrorType};
 
 pub mod ai_calling;
 mod errors;
 pub mod siliconflow_types;
-
-#[derive(Debug, Serialize)]
-pub enum ErrorType {
-    Warn,
-    Error,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ErrorInfo {
-    error_type: ErrorType,
-    message: String,
-}
 
 #[tauri::command]
 pub async fn ai_service_init(
@@ -57,8 +46,8 @@ pub async fn ai_service_reset(
 pub fn ai_service_send(content: String, hook_id: String, app: tauri::AppHandle) {
     spawn(async move {
         let ai_service = app.state::<AiService>();
-        if let Err(err) = ai_service.send(content, hook_id).await {
-            println!("[ERROR] [AI Service] Failed to send message: {err}")
+        if let Err(err) = ai_service.send(content, hook_id.clone()).await {
+            println!("[ERROR] [AI Service] Failed to send message: {err}");
         }
     });
 }

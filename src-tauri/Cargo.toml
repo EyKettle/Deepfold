@@ -30,3 +30,8 @@ reqwest = "0.12.15"
 tokio = { version ="1.44.2", features = ["macros"] }
 tauri-plugin-opener = "2"
 thiserror = "2.0.12"
+tauri-plugin-fs = "2"
+toml = "0.8.20"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-window-state = "2"

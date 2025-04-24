@@ -13,3 +13,10 @@ type ServiceConfig = {
   apiKey: string;
   modelName: string;
 };
+
+type BackendError = {
+  type: "RequestSending" | "EmptyParameter";
+  detail: any;
+};
+
+type CoreData = ServiceConfig;

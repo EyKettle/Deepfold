@@ -56,8 +56,8 @@ const InputBox: Component<InputBoxProps> = (props) => {
         cursor: "text",
         ...props.style,
       }}
-      placeholder={props.placeholder || ""}
-      value={props.value || ""}
+      placeholder={props.placeholder ?? ""}
+      value={props.value ?? ""}
       on:mouseenter={() => {
         if (!element || element === document.activeElement) return;
         element.style.boxShadow = "0 0 0 0.0625rem var(--color-theme-accent)";

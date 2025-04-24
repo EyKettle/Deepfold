@@ -72,12 +72,9 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
   const handleSubmit = () => {
     if (!props.onSubmit && !element.firstChild) return;
     const textArea = element.firstChild as HTMLTextAreaElement;
-    if (textArea.value !== "") {
-      if (props.onSubmit?.(textArea.value)) {
-        textArea.value = "";
-        textArea.focus();
-      }
-    }
+    textArea.focus();
+    if (textArea.value !== "")
+      if (props.onSubmit?.(textArea.value)) textArea.value = "";
   };
 
   let submitPress: () => void;

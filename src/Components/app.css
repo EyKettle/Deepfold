@@ -148,7 +148,7 @@ body {
   --color-dev-text: #720e0e;
   --color-dev-back: #e2a5a5;
   --color-msg-nothing-text: var(--color-theme-text);
-  --color-msg-nothing-back: var(--color-surface-dark);
+  --color-msg-nothing-back: rgba(0, 0, 0, 0.06);
   /* 自定义变量 */
 
   transition: all 0.2s;
@@ -200,8 +200,8 @@ html {
     --color-button-main-hover: #a74d4d;
     --color-button-main-active: #752a2a;
     --color-ghost-default: transparent;
-    --color-ghost-hover: rgba(255, 255, 255, 0.05);
-    --color-ghost-active: rgba(255, 255, 255, 0.1);
+    --color-ghost-hover: rgba(255, 255, 255, 0.06);
+    --color-ghost-active: rgba(255, 255, 255, 0.12);
 
     --color-border-default: rgba(255, 255, 255, 0.1);
     --color-border-active: rgba(255, 255, 255, 0.15);
@@ -220,7 +220,7 @@ html {
     --color-msg-info-text: #86b4e9;
     --color-dev-text: #f85555;
     --color-dev-back: #632020;
-    --color-msg-nothing-back: #272727;
+    --color-msg-nothing-back: rgba(0, 0, 0, 0.18);
     /* 自定义变量 */
 
     #page-setting {

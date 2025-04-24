@@ -7,7 +7,7 @@ use ai_service::{
     ai_calling::AiService, ai_service_clear, ai_service_history, ai_service_init, ai_service_reset,
     ai_service_send, ai_service_stop,
 };
-use utils::file_operator::{create_file, read_path};
+use utils::{config_load, config_save, config_set, local_data::LocalData};
 
 #[tauri::command]
 async fn get_version(app: tauri::AppHandle) -> Result<String, ()> {
@@ -29,8 +29,14 @@ fn switch_theme(app: tauri::AppHandle, theme_mode: &str) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            if let Ok(config_dir) = app.path().app_config_dir() {
+                app.manage(LocalData::new(config_dir.join("core.toml")));
+            }
             app.manage(AiService::new(
                 app.app_handle().clone(),
                 String::new(),
@@ -44,18 +50,18 @@ pub fn run() {
                 .expect("Initialized failed because of show window failed.");
             Ok(())
         })
-        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             get_version,
             switch_theme,
-            read_path,
-            create_file,
+            config_set,
+            config_load,
+            config_save,
             ai_service_init,
             ai_service_reset,
             ai_service_send,
             ai_service_stop,
             ai_service_history,
-            ai_service_clear
+            ai_service_clear,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

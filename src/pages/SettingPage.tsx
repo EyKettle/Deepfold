@@ -1,4 +1,4 @@
-import { Component, For, Signal } from "solid-js";
+import { Component, createEffect, For, Signal } from "solid-js";
 
 import { Version } from "../utils/debugger";
 import SettingSwitch from "../controls/SettingSwitch";
@@ -125,7 +125,7 @@ const SettingPage: Component<SettingPageProps> = (props) => {
             label: "深色",
             onClick: () => {
               document.documentElement.classList.add("dark");
-              app.setTheme("dark").catch((e) => console.log(e));
+              app.setTheme("dark");
             },
           },
         ]}

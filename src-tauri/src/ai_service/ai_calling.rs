@@ -18,7 +18,7 @@ use tokio::{
     },
 };
 
-use crate::utils::frontend_types::{self, StreamEndMessage};
+use crate::utils::frontend_types::{MessageError, MessageErrorType, StreamEndMessage};
 
 use super::{
     errors::{Error, Parameter},
@@ -124,9 +124,9 @@ impl AiService {
                                     app_handle
                                         .emit(
                                             &format!("{hook_id}_error"),
-                                            frontend_types::MessageError {
+                                            MessageError {
                                                 error_type:
-                                                    frontend_types::MessageErrorType::RequestSending,
+                                                    MessageErrorType::RequestSending,
                                                 detail: e
                                                     .url()
                                                     .map(|url| url.to_string())
@@ -196,18 +196,34 @@ impl AiService {
             .next()
             .map(|choice| choice.delta.content)?
     }
-    async fn check_props(&self) -> Result<(), Error> {
+    async fn check_props(&self, hook_id: Option<String>) -> Result<(), Error> {
+        let mut empty_items = Vec::new();
         if self.endpoint.read().await.is_empty() {
-            return Err(Error::EmptyParameter(Parameter::Endpoint));
-        } else if self.api_key.read().await.is_empty() {
-            return Err(Error::EmptyParameter(Parameter::APIKey));
-        } else if self.model_name.read().await.is_empty() {
-            return Err(Error::EmptyParameter(Parameter::ModelName));
+            empty_items.push(Parameter::Endpoint);
         }
-        Ok(())
+        if self.api_key.read().await.is_empty() {
+            empty_items.push(Parameter::APIKey);
+        }
+        if self.model_name.read().await.is_empty() {
+            empty_items.push(Parameter::ModelName);
+        }
+        if empty_items.is_empty() {
+            Ok(())
+        } else {
+            if let Some(hook_id) = hook_id {
+                let _ = self.app_handle.emit(
+                    &format!("{hook_id}_error"),
+                    MessageError {
+                        error_type: MessageErrorType::EmptyParameter,
+                        detail: empty_items.clone(),
+                    },
+                );
+            }
+            Err(Error::EmptyParameter(empty_items))
+        }
     }
     pub async fn send(&self, content: String, hook_id: String) -> Result<(), Error> {
-        self.check_props().await?;
+        self.check_props(Some(hook_id.clone())).await?;
         self.stop().await?;
         self.messages.write().await.push(Message {
             role: MessageRole::User,
@@ -259,7 +275,7 @@ impl AiService {
         Ok(())
     }
     pub async fn stop(&self) -> Result<(), Error> {
-        self.check_props().await?;
+        self.check_props(None).await?;
         if let Some(stop) = self.stop_sender.lock().await.take() {
             let _ = stop.send(());
         };

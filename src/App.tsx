@@ -1,4 +1,4 @@
-import { createRoot, createSignal, onMount } from "solid-js";
+import { createRoot, createSignal, For, onMount } from "solid-js";
 
 import { AppWindow } from "./controls/AppWindow";
 
@@ -33,28 +33,44 @@ function App() {
   };
 
   const [messages, setMessages] = createSignal<Message[]>([]);
-  const [aiConfig, setAiConfig] = createSignal<ServiceConfig>({
+  const [config, setConfig] = createSignal<CoreData>({
     endpoint: "",
     apiKey: "",
     modelName: "",
   });
 
-  onMount(async () => {
-    botConfigTemplates("OpenAIGemini").then((config) => {
-      setAiConfig(config);
+  onMount(() => {
+    invoke<CoreData>("config_load").then((config) => {
+      setConfig(config);
       invoke("ai_service_init", {
         endpoint: config.endpoint,
         apiKey: config.apiKey,
         modelName: config.modelName,
       }).catch(catchServiceError);
     });
+
+    // botConfigTemplates("OpenAIGemini").then((config) => {
+    //   setConfig(config);
+    //   invoke("ai_service_init", {
+    //     endpoint: config.endpoint,
+    //     apiKey: config.apiKey,
+    //     modelName: config.modelName,
+    //   }).catch(catchServiceError);
+    // });
   });
 
   const [showSettings, setShowSettings] = createSignal(false);
   const handleShowSettings = () => {
     setShowSettings(!showSettings());
     switchTo(showSettings() ? Pages.SettingPage : Pages.HomePage);
-    if (!showSettings()) inputArea.focus();
+    if (!showSettings()) {
+      inputArea.focus();
+      invoke("config_set", config())
+        .then(() => {
+          invoke("config_save").catch(catchServiceError);
+        })
+        .catch(catchServiceError);
+    }
   };
   const handleSubmit = (text: string): boolean => {
     append({ sender: Sender.Own, content: text });
@@ -87,29 +103,80 @@ function App() {
         }
         markdownMessage.push(e.payload);
       });
-      const unlistenError = await listen<
-        | string
-        | {
-            type: "RequestSending";
-            detail: string;
+      const unlistenError = await listen<string | BackendError>(
+        `${hookId}_error`,
+        (e) => {
+          if (typeof e.payload === "object") {
+            switch (e.payload.type) {
+              case "EmptyParameter":
+                const items = (e.payload.detail as string[]).map((value) => {
+                  switch (value) {
+                    case "Endpoint":
+                      return (
+                        <div
+                          style={{
+                            padding: "4px 8px",
+                            "border-radius": "8px",
+                            "background-color": "var(--color-msg-nothing-back)",
+                          }}
+                        >
+                          URL
+                        </div>
+                      );
+                    case "APIKey":
+                      return (
+                        <div
+                          style={{
+                            padding: "4px 8px",
+                            "border-radius": "8px",
+                            "background-color": "var(--color-msg-nothing-back)",
+                          }}
+                        >
+                          密钥
+                        </div>
+                      );
+                    case "ModelName":
+                      return (
+                        <div
+                          style={{
+                            padding: "4px 8px",
+                            "border-radius": "8px",
+                            "background-color": "var(--color-msg-nothing-back)",
+                          }}
+                        >
+                          模型名称
+                        </div>
+                      );
+                  }
+                });
+                markdownMessage.setBar(
+                  <div class="chat-markdown" style={{ "user-select": "none" }}>
+                    <p style={{ "font-weight": "bold" }}>空参数</p>
+                    <div style={{ display: "inline-flex", gap: "8px" }}>
+                      {items}
+                    </div>
+                  </div>
+                );
+                break;
+              case "RequestSending":
+                markdownMessage.setBar(
+                  <div class="chat-markdown" style={{ "user-select": "none" }}>
+                    <p style={{ "font-weight": "bold" }}>无正常响应</p>
+                    <div style={{ display: "inline-flex", gap: "8px" }}>
+                      <p style={{ "flex-shrink": 0 }}>URL:</p>
+                      <a href={e.payload.detail}>{e.payload.detail}</a>
+                    </div>
+                  </div>
+                );
+                break;
+            }
+          } else {
+            append({ sender: Sender.System, content: "• 出现问题" });
+            append({ sender: Sender.System, content: e.payload });
           }
-      >(`${hookId}_error`, (e) => {
-        if (typeof e.payload === "object") {
-          markdownMessage.setBar(
-            <div class="chat-markdown" style={{ "user-select": "none" }}>
-              <p style={{ "font-weight": "bold" }}>无正常响应</p>
-              <div style={{ display: "inline-flex", gap: "8px" }}>
-                <p style={{ "flex-shrink": 0 }}>URL:</p>
-                <a href={e.payload.detail}>{e.payload.detail}</a>
-              </div>
-            </div>
-          );
-        } else {
-          append({ sender: Sender.System, content: "• 出现问题" });
-          append({ sender: Sender.System, content: e.payload });
+          stop();
         }
-        stop();
-      });
+      );
       const unlistenEnd = await listen<StreamEndMessage>(
         `${hookId}_end`,
         (e) => {
@@ -155,9 +222,9 @@ function App() {
   };
   const resetService = () => {
     invoke("ai_service_reset", {
-      endpoint: aiConfig().endpoint,
-      apiKey: aiConfig().apiKey,
-      modelName: aiConfig().modelName,
+      endpoint: config().endpoint,
+      apiKey: config().apiKey,
+      modelName: config().modelName,
     })
       .then(() => {
         append({ sender: Sender.System, content: "重置服务配置" });
@@ -206,6 +273,18 @@ function App() {
         e.preventDefault();
         invoke("ai_service_clear").catch(catchServiceError);
         clearHistory();
+      },
+    },
+    {
+      key: "L",
+      keyModifiers: "Shift",
+      callback: () => {
+        invoke<CoreData>("config_load")
+          .then((config) => {
+            setConfig(config);
+            append({ sender: Sender.System, content: "读取本地配置" });
+          })
+          .catch(catchServiceError);
       },
     },
   ]);
@@ -374,7 +453,7 @@ function App() {
         <SettingPage
           version={version}
           messages={messages()}
-          aiConfig={[aiConfig, setAiConfig]}
+          aiConfig={[config, setConfig]}
           operations={{
             back: () => handleShowSettings(),
             clearMessages,

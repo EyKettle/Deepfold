@@ -1,6 +1,7 @@
+use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize)]
 pub enum Parameter {
     Endpoint,
     APIKey,
@@ -14,7 +15,7 @@ pub enum Error {
     #[error("Unexpected streaming")]
     UnexpectedStream,
     #[error("Empty Parameter: {0:?}")]
-    EmptyParameter(Parameter),
+    EmptyParameter(Vec<Parameter>),
     #[error("Fail to emit event: {0}")]
     EmitFailed(tauri::Error),
     #[error("Eventsource Error: {0}")]

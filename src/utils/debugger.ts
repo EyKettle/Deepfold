@@ -1,6 +1,5 @@
 import { createEffect, onCleanup } from "solid-js";
-import { invoke } from "@tauri-apps/api/core";
-import { ServiceConfig } from "../Ai/CoreService";
+import { readFile } from "@tauri-apps/plugin-fs";
 
 export type VersionNumber = `${number}.${number}.${number}`;
 
@@ -10,12 +9,12 @@ export type Version = {
 };
 
 export type ServiceError = {
-  error_type: string;
+  type: string;
   message: string;
 };
 
 export function parseServiceError(error: ServiceError) {
-  switch (error.error_type) {
+  switch (error.type) {
     case "Warn":
       console.warn(error.message);
       break;
@@ -48,15 +47,13 @@ export async function botConfigTemples(
         names.modelName = "gemini-2.5-flash-preview-04-17";
         break;
     }
-    const api = await invoke<string>("read_path", {
-      path: `E:\\Developing\\Profiles\\${names.folderName}\\API.txt`,
-    });
+    const api = await readFile(
+      `E:\\Developing\\Profiles\\${names.folderName}\\API.txt`
+    ).then((e) => e.toString());
     return {
       endpoint: names.url,
       apiKey: api,
       modelName: names.modelName,
-      hooks: ["message_add", "message_push", "message_tip"],
-      stream: false,
     };
   } catch (error) {
     console.error("读取API密钥失败:", error);
