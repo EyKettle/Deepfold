@@ -26,7 +26,7 @@ export function parseServiceError(error: ServiceError) {
 
 const apiUrl = (head: string) => `https://api.${head}/v1/chat/completions`;
 
-export async function botConfigTemples(
+export async function botConfigTemplates(
   type: "SiliconCloud" | "Deepseek" | "OpenAIGemini"
 ): Promise<ServiceConfig> {
   try {

@@ -1,4 +1,4 @@
-import { createRoot, createSignal, For, onMount } from "solid-js";
+import { createRoot, createSignal, onMount } from "solid-js";
 
 import { AppWindow } from "./controls/AppWindow";
 
@@ -6,12 +6,7 @@ import HomePage from "./pages/HomePage";
 import SettingPage from "./pages/SettingPage";
 
 import "./App.css";
-import {
-  botConfigTemples as botConfigTemplates,
-  createKeyBinding,
-  parseServiceError as catchServiceError,
-  Version,
-} from "./utils/debugger";
+import { createKeyBinding, parseServiceError, Version } from "./utils/debugger";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import ChatInputBox from "./components/chat/chatInputBox";
@@ -20,7 +15,8 @@ import { ChatMessage, Sender } from "./components/chat/chatMessageBox";
 import { animate, animateMini } from "motion";
 import { createMarkdownMessage } from "./components/chat/MessageUtils";
 import MessageStatusBar from "./controls/MessageStatusBar";
-import { requestErrorTip } from "./controls/MessageWigets";
+import { requestErrorTip } from "./controls/MessageWidgets";
+import { window } from "@tauri-apps/api";
 
 enum Pages {
   SettingPage = 0,
@@ -35,19 +31,21 @@ function App() {
 
   const [messages, setMessages] = createSignal<Message[]>([]);
   const [config, setConfig] = createSignal<CoreData>({
+    theme: "auto",
     endpoint: "",
     apiKey: "",
     modelName: "",
   });
 
   onMount(() => {
-    invoke<CoreData>("config_load").then((config) => {
+    invoke<CoreData>("config_read").then((config) => {
       setConfig(config);
+      switchTheme(config.theme);
       invoke("ai_service_init", {
         endpoint: config.endpoint,
         apiKey: config.apiKey,
         modelName: config.modelName,
-      }).catch(catchServiceError);
+      }).catch(parseServiceError);
     });
 
     // botConfigTemplates("OpenAIGemini").then((config) => {
@@ -60,17 +58,21 @@ function App() {
     // });
   });
 
+  const saveConfig = () => {
+    invoke("config_set", config())
+      .then(() => {
+        invoke("config_save").catch(parseServiceError);
+      })
+      .catch(parseServiceError);
+  };
+
   const [showSettings, setShowSettings] = createSignal(false);
   const handleShowSettings = () => {
     setShowSettings(!showSettings());
     switchTo(showSettings() ? Pages.SettingPage : Pages.HomePage);
     if (!showSettings()) {
       inputArea.focus();
-      invoke("config_set", config())
-        .then(() => {
-          invoke("config_save").catch(catchServiceError);
-        })
-        .catch(catchServiceError);
+      saveConfig();
     }
   };
   const handleSubmit = (text: string): boolean => {
@@ -186,7 +188,7 @@ function App() {
         content: text,
         hookId,
       }).catch((e) => {
-        catchServiceError(e);
+        parseServiceError(e);
         markdownMessage.push("程序运行错误");
       });
       const stop = () => {
@@ -208,7 +210,7 @@ function App() {
         append({ sender: Sender.System, content: "清除聊天记录" });
         setMessages([]);
       })
-      .catch(catchServiceError);
+      .catch(parseServiceError);
   };
   const resetService = () => {
     invoke("ai_service_reset", {
@@ -220,7 +222,7 @@ function App() {
         append({ sender: Sender.System, content: "重置服务配置" });
         scrollToBottom();
       })
-      .catch(catchServiceError);
+      .catch(parseServiceError);
   };
   createKeyBinding([
     {
@@ -230,7 +232,7 @@ function App() {
           .then((msg) => {
             append({ sender: Sender.Other, content: msg });
           })
-          .catch(catchServiceError);
+          .catch(parseServiceError);
       },
     },
     {
@@ -261,26 +263,29 @@ function App() {
       callback: (e) => {
         if (e.target === inputArea) return;
         e.preventDefault();
-        invoke("ai_service_clear").catch(catchServiceError);
+        invoke("ai_service_clear").catch(parseServiceError);
         clearHistory();
       },
     },
     {
       key: "L",
       keyModifiers: "Shift",
-      callback: () => {
+      callback: (e) => {
+        e.preventDefault();
         invoke<CoreData>("config_load")
           .then((config) => {
             setConfig(config);
+            switchTheme(config.theme);
             append({ sender: Sender.System, content: "读取本地配置" });
           })
-          .catch(catchServiceError);
+          .catch(parseServiceError);
       },
     },
   ]);
 
   let inputArea: HTMLTextAreaElement;
 
+  let switchTheme: (theme: Theme) => void;
   let switchTo: (_index: number) => void;
 
   let append: (info: ChatMessage, open?: boolean) => number;
@@ -289,6 +294,8 @@ function App() {
   let clearHistory: () => void;
   let alignBottom: (sudden?: boolean) => void;
   let scrollToBottom: () => void;
+
+  // window.getCurrentWindow();
 
   return (
     <AppWindow title="深度折叠" showSettings={handleShowSettings}>
@@ -443,12 +450,14 @@ function App() {
         <SettingPage
           version={version}
           messages={messages()}
-          aiConfig={[config, setConfig]}
+          config={[config, setConfig]}
           operations={{
             back: () => handleShowSettings(),
             clearMessages,
             resetService,
+            saveConfig,
           }}
+          getOps={(st) => (switchTheme = st)}
         />
         <HomePage
           getOps={(a, s, cs, cr, ab, b) => {

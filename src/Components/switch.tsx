@@ -5,7 +5,6 @@ import {
   For,
   JSX,
   onCleanup,
-  onMount,
 } from "solid-js";
 
 export type SwitchItem = {
@@ -41,7 +40,6 @@ interface SwitchItemProps {
   active: boolean;
   callback: (index: number) => void;
   event: () => void;
-  hooks: (reset: () => void) => void;
   fontSize?: string;
   class?: string;
   style?: JSX.CSSProperties;
@@ -69,7 +67,6 @@ const SwitchItem: Component<SwitchItemProps> = (props) => {
     element.style.borderTopWidth = "0";
     element.style.cursor = "pointer";
   };
-  props.hooks(reset);
 
   const applyMousedown = () => {
     element.style.backgroundColor = "var(--color-switch-press)";
@@ -107,7 +104,7 @@ const SwitchItem: Component<SwitchItemProps> = (props) => {
     else element.tabIndex = 0;
   });
 
-  onMount(() => {
+  createEffect(() => {
     if (props.active) {
       element.style.color = "var(--color-switch-onActive)";
       element.style.backgroundColor = "var(--color-switch-active)";
@@ -214,15 +211,12 @@ export const Switch: Component<SwitchProps> = (props) => {
   const [activeIndex, setActiveIndex] = createSignal(props.default ?? 0);
   const handleSwitch = (index: number) => switchTo(index);
 
-  let resetHandles: (() => void)[] = Array(props.children.length).fill(() =>
-    console.warn("Switch item not found")
-  );
-
   const switchTo = (index: number, noAction?: boolean) => {
-    const prev = activeIndex();
     setActiveIndex(index);
-    resetHandles[prev]();
-    if (!noAction) props.onChange?.(index);
+    if (!noAction) {
+      props.onChange?.(index);
+      console.log("发生事件");
+    }
   };
   const getSelected = () => activeIndex();
   props.getOps?.(switchTo, getSelected);
@@ -256,9 +250,6 @@ export const Switch: Component<SwitchProps> = (props) => {
             callback={handleSwitch}
             event={item.onClick}
             active={index() === activeIndex()}
-            hooks={(r) => {
-              resetHandles[index()] = r;
-            }}
             disabled={props.disabled}
             fontSize={props.fontSize}
             class={props.itemClass}

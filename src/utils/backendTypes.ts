@@ -19,4 +19,8 @@ type BackendError = {
   detail: any;
 };
 
-type CoreData = ServiceConfig;
+type Theme = "auto" | "light" | "dark";
+
+type CoreData = ServiceConfig & {
+  theme: Theme;
+};

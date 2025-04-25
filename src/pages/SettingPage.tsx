@@ -1,8 +1,8 @@
-import { Component, For, onCleanup, onMount, Signal } from "solid-js";
+import { Component, For, Signal } from "solid-js";
 
 import { Version } from "../utils/debugger";
 import SettingSwitch from "../controls/SettingSwitch";
-import { webviewWindow, app, window } from "@tauri-apps/api";
+import { app, window } from "@tauri-apps/api";
 import InputBox from "../components/inputBox";
 import SettingCard from "../controls/SettingCard";
 import { Button } from "../components/button";
@@ -10,33 +10,17 @@ import { Button } from "../components/button";
 interface SettingPageProps {
   version: Version;
   messages: Message[];
-  aiConfig: Signal<ServiceConfig>;
+  config: Signal<CoreData>;
   operations: {
     back: () => void;
     clearMessages: () => void;
     resetService: () => void;
+    saveConfig: () => void;
   };
+  getOps: (switchTheme: (theme: Theme) => void) => void;
 }
 
 const SettingPage: Component<SettingPageProps> = (props) => {
-  let switchTheme: (index: number, noAction?: boolean) => void;
-  let getThemeIndex: () => number;
-  let unlisten: () => void;
-  onMount(async () => {
-    unlisten = await webviewWindow
-      .getCurrentWebviewWindow()
-      .onThemeChanged(({ payload: theme }) => {
-        console.log("changed", theme, Date.now());
-
-        if (getThemeIndex() === 1) {
-          if (theme === "dark") document.documentElement.classList.add("dark");
-          else document.documentElement.classList.remove("dark");
-        } else {
-          app.setTheme(getThemeIndex() === 0 ? "light" : "dark");
-        }
-      });
-  });
-  onCleanup(() => unlisten());
   return (
     <div
       id="page-setting"
@@ -109,36 +93,66 @@ const SettingPage: Component<SettingPageProps> = (props) => {
       </div>
       <SettingSwitch
         title="色彩模式"
-        default={1}
+        default={
+          props.config[0]().theme === "auto"
+            ? 1
+            : props.config[0]().theme === "dark"
+            ? 2
+            : 0
+        }
         switchStyle={{
           display: "grid",
           "grid-template-columns": "1fr 80px 1fr",
         }}
-        getOps={(t, i) => {
-          switchTheme = t;
-          getThemeIndex = i;
-        }}
+        getOps={(to) =>
+          props.getOps((theme) => {
+            switch (theme) {
+              case "light":
+                to(0, true);
+                break;
+              case "dark":
+                to(2, true);
+                break;
+              default:
+                to(1, true);
+                break;
+            }
+          })
+        }
       >
         {[
           {
             label: "浅色",
             onClick: () => {
               document.documentElement.classList.remove("dark");
-              app.setTheme("light");
+              app.setTheme("light").then(() => {
+                props.config[1]((prev) => {
+                  let value = { ...prev };
+                  value.theme = "light";
+                  return value;
+                });
+                props.operations.saveConfig();
+              });
             },
           },
           {
             label: "自动",
             onClick: () => {
               app.setTheme(null).then(() => {
-                webviewWindow
-                  .getCurrentWebviewWindow()
+                window
+                  .getCurrentWindow()
                   .theme()
                   .then((theme) => {
                     if (theme === "dark")
                       document.documentElement.classList.add("dark");
                     else document.documentElement.classList.remove("dark");
                   });
+                props.config[1]((prev) => {
+                  let value = { ...prev };
+                  value.theme = "auto";
+                  return value;
+                });
+                props.operations.saveConfig();
               });
             },
           },
@@ -146,7 +160,14 @@ const SettingPage: Component<SettingPageProps> = (props) => {
             label: "深色",
             onClick: () => {
               document.documentElement.classList.add("dark");
-              app.setTheme("dark");
+              app.setTheme("dark").then(() => {
+                props.config[1]((prev) => {
+                  let value = { ...prev };
+                  value.theme = "dark";
+                  return value;
+                });
+                props.operations.saveConfig();
+              });
             },
           },
         ]}
@@ -154,10 +175,10 @@ const SettingPage: Component<SettingPageProps> = (props) => {
       <SettingCard title="AI 模型">
         <InputBox
           placeholder="URL"
-          value={props.aiConfig[0]().endpoint}
+          value={props.config[0]().endpoint}
           onChange={(e) => {
             if (!e.target.value) return;
-            props.aiConfig[1]((prev) => {
+            props.config[1]((prev) => {
               let value = { ...prev };
               value.endpoint = e.target.value;
               return value;
@@ -166,11 +187,11 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         />
         <InputBox
           placeholder="密钥"
-          value={props.aiConfig[0]().apiKey}
+          value={props.config[0]().apiKey}
           hide={true}
           onChange={(e) => {
             if (!e.target.value) return;
-            props.aiConfig[1]((prev) => {
+            props.config[1]((prev) => {
               let value = { ...prev };
               value.apiKey = e.target.value;
               return value;
@@ -179,10 +200,10 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         />
         <InputBox
           placeholder="模型名称"
-          value={props.aiConfig[0]().modelName}
+          value={props.config[0]().modelName}
           onChange={(e) => {
             if (!e.target.value) return;
-            props.aiConfig[1]((prev) => {
+            props.config[1]((prev) => {
               let value = { ...prev };
               value.modelName = e.target.value;
               return value;

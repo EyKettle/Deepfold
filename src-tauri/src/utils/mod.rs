@@ -1,5 +1,5 @@
 use futures::TryFutureExt;
-use local_data::{CoreData, LocalData};
+use local_data::{CoreData, LocalData, Theme};
 use serde::Serialize;
 use tauri::State;
 
@@ -22,12 +22,13 @@ pub struct ErrorInfo {
 
 #[tauri::command]
 pub async fn config_set(
+    theme: Option<Theme>,
     endpoint: Option<String>,
     api_key: Option<String>,
     model_name: Option<String>,
     state: State<'_, LocalData>,
 ) -> Result<(), ()> {
-    state.set(endpoint, api_key, model_name).await;
+    state.set(theme, endpoint, api_key, model_name).await;
     Ok(())
 }
 
@@ -42,12 +43,13 @@ pub async fn config_load(state: State<'_, LocalData>) -> Result<CoreData, ErrorI
 }
 #[tauri::command]
 pub async fn config_save(state: State<'_, LocalData>) -> Result<(), ErrorInfo> {
-    state
-        .save()
-        .map_err(|e| ErrorInfo {
-            error_type: ErrorType::Error,
-            message: e.to_string(),
-        })
-        .await?;
+    state.save().await.map_err(|e| ErrorInfo {
+        error_type: ErrorType::Error,
+        message: e.to_string(),
+    })?;
     Ok(())
+}
+#[tauri::command]
+pub async fn config_read(state: State<'_, LocalData>) -> Result<CoreData, ()> {
+    Ok(state.read().await)
 }

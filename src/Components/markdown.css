@@ -234,7 +234,7 @@
     overflow: scroll;
     text-wrap: wrap;
     padding: 0.5rem;
-    background-color: var(--color-surface-default);
+    background-color: var(--color-solid-primary);
     border: var(--color-border-default) solid 0.0625rem;
     border-radius: 0.5rem;
   }

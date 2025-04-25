@@ -1,4 +1,4 @@
-use tauri::{Manager, Theme};
+use tauri::{async_runtime::spawn, Manager, Theme};
 
 mod ai_service;
 mod utils;
@@ -7,7 +7,10 @@ use ai_service::{
     ai_calling::AiService, ai_service_clear, ai_service_history, ai_service_init, ai_service_reset,
     ai_service_send, ai_service_stop,
 };
-use utils::{config_load, config_save, config_set, local_data::LocalData};
+use utils::{
+    config_load, config_read, config_save, config_set,
+    local_data::{self, LocalData},
+};
 
 #[tauri::command]
 async fn get_version(app: tauri::AppHandle) -> Result<String, ()> {
@@ -43,6 +46,20 @@ pub fn run() {
                 String::new(),
                 String::new(),
             ));
+            let app_handle = app.handle().clone();
+            spawn(async move {
+                let _ = config_load(app_handle.state::<LocalData>()).await;
+                let data = app_handle.state::<LocalData>();
+                match data.read().await.theme {
+                    local_data::Theme::Dark => {
+                        app_handle.set_theme(Some(Theme::Dark));
+                    }
+                    local_data::Theme::Light => {
+                        app_handle.set_theme(Some(Theme::Light));
+                    }
+                    _ => {}
+                }
+            });
 
             let window = app.get_webview_window("main").unwrap();
             window
@@ -56,6 +73,7 @@ pub fn run() {
             config_set,
             config_load,
             config_save,
+            config_read,
             ai_service_init,
             ai_service_reset,
             ai_service_send,

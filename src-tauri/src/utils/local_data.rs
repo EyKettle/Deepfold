@@ -9,12 +9,28 @@ use tokio::{
 
 use super::errors::Error;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub enum Theme {
+    #[default]
+    #[serde(rename = "auto")]
+    Auto,
+    #[serde(rename = "light")]
+    Light,
+    #[serde(rename = "dark")]
+    Dark,
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CoreData {
-    endpoint: String,
-    api_key: String,
-    model_name: String,
+    #[serde(default)]
+    pub theme: Theme,
+    #[serde(default)]
+    pub endpoint: String,
+    #[serde(default)]
+    pub api_key: String,
+    #[serde(default)]
+    pub model_name: String,
 }
 
 pub struct LocalData {
@@ -27,6 +43,7 @@ impl LocalData {
         Self {
             core_file,
             core_data: RwLock::new(CoreData {
+                theme: Theme::Auto,
                 endpoint: String::new(),
                 api_key: String::new(),
                 model_name: String::new(),
@@ -35,11 +52,15 @@ impl LocalData {
     }
     pub async fn set(
         &self,
+        theme: Option<Theme>,
         endpoint: Option<String>,
         api_key: Option<String>,
         model_name: Option<String>,
     ) {
         let mut core_data = self.core_data.write().await;
+        if let Some(t) = theme {
+            core_data.theme = t
+        }
         if let Some(ep) = endpoint {
             core_data.endpoint = ep
         }
