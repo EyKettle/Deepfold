@@ -46,10 +46,10 @@ const ChatMessageBubble: Component<ChatMessageBubbleProps> = (props) => {
           value: 1,
           unit: "rem",
         };
-        appearance.style.borderRadius = 1 * fontSize.value + fontSize.unit;
+        appearance.style.borderRadius = 1.0625 * fontSize.value + fontSize.unit;
         appearance.style.minHeight = 1.5 * fontSize.value + fontSize.unit;
         appearance.style.paddingBlock = 0.25 * fontSize.value + fontSize.unit;
-        appearance.style.paddingInline = 0.75 * fontSize.value + fontSize.unit;
+        appearance.style.paddingInline = 0.6 * fontSize.value + fontSize.unit;
         if (props.position === BubblePosition.Start)
           appearance.style.marginTop = "0.25rem";
 
@@ -134,7 +134,7 @@ const ChatMessageBubble: Component<ChatMessageBubbleProps> = (props) => {
           "transition-property": "opacity, scale, filter, border-radius",
           "transition-duration": "0.2s",
           "transition-timing-function": "cubic-bezier(0.5, 0, 0, 1)",
-          "will-change": "scale, filter",
+          "will-change": "filter, opacity, border-radius, transform, scale",
           "overflow-wrap": "anywhere",
           ...props.style,
         }}

@@ -68,8 +68,8 @@ const HomePage: Component<homePageProps> = (props) => {
             },
             {
               type: "spring",
-              duration: 0.4,
-              bounce: 0.3,
+              duration: 0.5,
+              bounce: 0.25,
             }
           ).then(resolve);
         })

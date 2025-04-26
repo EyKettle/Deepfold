@@ -5,12 +5,15 @@
     "./markdown.css",
     {
       "target": "./chatInputBox.tsx",
-      "desc": ["adjust textarea duration to 0.4s", "Apply solid surface"]
+      "desc": ["Apply solid surface"]
     },
     {
       "target": "./chat/MessageUtils.tsx",
-      "desc": "wrap a loading and add custom rule"
+      "desc": ["Loading style", "Bar config"]
     },
-    { "target": "./card.tsx", "desc": "Custom shadow and extend on:event" }
+    {
+      "target": "./card.tsx",
+      "desc": ["Add shadow switch and custom shadow", "Extend on:event"]
+    }
   ]
 }

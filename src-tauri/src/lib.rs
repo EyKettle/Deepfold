@@ -7,6 +7,7 @@ use ai_service::{
     ai_calling::AiService, ai_service_clear, ai_service_history, ai_service_init, ai_service_reset,
     ai_service_send, ai_service_stop,
 };
+use tauri_plugin_opener::open_url;
 use utils::{
     config_load, config_read, config_save, config_set,
     local_data::{self, LocalData},
@@ -36,16 +37,26 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(
+            tauri::plugin::Builder::<tauri::Wry, ()>::new("ProperNavigation")
+                .on_navigation(|_, url| {
+                    // allow the production URL or localhost on dev
+                    if url.scheme() == "tauri"
+                        || (cfg!(dev) && url.host_str() == Some("localhost"))
+                    {
+                        true
+                    } else {
+                        let _ = open_url(url, None::<String>);
+                        false
+                    }
+                })
+                .build(),
+        )
         .setup(|app| {
             if let Ok(config_dir) = app.path().app_config_dir() {
                 app.manage(LocalData::new(config_dir.join("core.toml")));
             }
-            app.manage(AiService::new(
-                app.app_handle().clone(),
-                String::new(),
-                String::new(),
-                String::new(),
-            ));
+            app.manage(AiService::new(String::new(), String::new(), String::new()));
             let app_handle = app.handle().clone();
             spawn(async move {
                 let _ = config_load(app_handle.state::<LocalData>()).await;

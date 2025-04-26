@@ -12,8 +12,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@langchain/core": "^0.3.27",
-    "@langchain/langgraph": "^0.2.39",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-fs": "^2.2.1",
     "@tauri-apps/plugin-opener": "^2.2.6",
@@ -32,7 +30,7 @@
     "@tauri-apps/cli": "^2",
     "@types/node": "^22.10.5",
     "typescript": "^5.2.2",
-    "vite": "^5.3.1",
+    "vite": "^6.3.3",
     "vite-plugin-solid": "^2.8.0"
   }
 }

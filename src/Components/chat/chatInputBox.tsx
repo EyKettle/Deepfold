@@ -97,7 +97,7 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
         "border-width": "0.0625rem",
         "border-bottom-width": "0",
         "border-color": "var(--color-border-default)",
-        "background-color": "var(--color-solid-primary)",
+        "background-color": "var(--color-input-solid)",
         "box-shadow": "0 0.25rem 0.5rem var(--color-shadow)",
         "transition-property": "all",
         "transition-duration": "0.2s",
@@ -117,7 +117,7 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
           width: "100%",
           background: "none",
           "transition-property": "all",
-          "transition-duration": "0.4s",
+          "transition-duration": "0.2s",
           "transition-timing-function": "cubic-bezier(0.5, 0, 0, 1)",
         }}
         placeholder={props.placeHolder}

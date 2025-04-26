@@ -1,11 +1,13 @@
 use ai_calling::AiService;
+use service_types::StreamEvent;
 use siliconflow_types::Message;
-use tauri::{async_runtime::spawn, Manager};
+use tauri::{async_runtime::spawn, ipc::Channel, Manager};
 
 use crate::utils::{ErrorInfo, ErrorType};
 
 pub mod ai_calling;
 mod errors;
+mod service_types;
 pub mod siliconflow_types;
 
 #[tauri::command]
@@ -43,11 +45,11 @@ pub async fn ai_service_reset(
 }
 
 #[tauri::command]
-pub fn ai_service_send(content: String, hook_id: String, app: tauri::AppHandle) {
+pub fn ai_service_send(content: String, channel: Channel<StreamEvent>, app: tauri::AppHandle) {
     spawn(async move {
         let ai_service = app.state::<AiService>();
-        if let Err(err) = ai_service.send(content, hook_id.clone()).await {
-            println!("[ERROR] [AI Service] Failed to send message: {err}");
+        if let Err(err) = ai_service.send(content, channel).await {
+            println!("[ERROR] [AI Service] Failed to send message:\n{err}\n——————\n");
         }
     });
 }

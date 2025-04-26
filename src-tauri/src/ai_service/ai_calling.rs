@@ -8,7 +8,7 @@ use reqwest::{
 use reqwest_eventsource::{Event, EventSource};
 use tauri::{
     async_runtime::{spawn, Mutex},
-    Emitter,
+    ipc::Channel,
 };
 use tokio::{
     pin, select,
@@ -18,15 +18,15 @@ use tokio::{
     },
 };
 
-use crate::utils::frontend_types::{MessageError, MessageErrorType, StreamEndMessage};
+use crate::ai_service::service_types::{StreamError, StreamErrorDetail, StreamErrorType};
 
 use super::{
     errors::{Error, Parameter},
+    service_types::StreamEvent,
     siliconflow_types::{AiResponse, Message, MessageRole, RequestBody, StreamResponse},
 };
 
 pub struct AiService {
-    app_handle: tauri::AppHandle,
     endpoint: RwLock<String>,
     api_key: RwLock<String>,
     model_name: RwLock<String>,
@@ -35,14 +35,8 @@ pub struct AiService {
 }
 
 impl AiService {
-    pub fn new(
-        app_handle: tauri::AppHandle,
-        endpoint: String,
-        api_key: String,
-        model_name: String,
-    ) -> Self {
+    pub fn new(endpoint: String, api_key: String, model_name: String) -> Self {
         Self {
-            app_handle,
             endpoint: RwLock::new(endpoint),
             api_key: RwLock::new(api_key),
             model_name: RwLock::new(model_name),
@@ -69,10 +63,9 @@ impl AiService {
         Ok(())
     }
     async fn parse_siliconflow(
-        app_handle: tauri::AppHandle,
+        channel: Channel<StreamEvent>,
         mut eventsource: EventSource,
         messages: Arc<RwLock<Vec<Message>>>,
-        hook_id: String,
         rx_stop: Receiver<()>,
     ) -> Result<(), Error> {
         let mut msg_list = messages.write().await;
@@ -89,29 +82,33 @@ impl AiService {
                             if !message.data.trim().is_empty() && message.data != "[DONE]" {
                                 match serde_json::from_str::<StreamResponse>(&message.data) {
                                     Ok(response) => {
-                                        let mut emit_id = hook_id.clone();
-                                        let mut content =
+                                        // TODO: reasoning support
+                                        // let mut emit_id = hook_id.clone();
+                                        let content =
                                             AiService::extract_stream_content(response.clone())
                                                 .unwrap_or_default();
-                                        if content.is_empty() {
-                                            content = AiService::extract_stream_reason(response)
-                                                .unwrap_or_default();
-                                            if !content.trim().is_empty() {
-                                                emit_id = format!("{hook_id}_reason");
-                                            }
-                                        }
+                                        // if content.is_empty() {
+                                        //     content = AiService::extract_stream_reason(response)
+                                        //         .unwrap_or_default();
+                                        //     if !content.trim().is_empty() {
+                                        //         emit_id = format!("{hook_id}_reason");
+                                        //     }
+                                        // }
                                         full_text += content.as_str();
                                         if !content.is_empty() {
-                                            app_handle
-                                                .emit(&emit_id, content)
-                                                .map_err(Error::EmitFailed)?;
+                                            channel.send(StreamEvent::Push(content)).map_err(Error::StreamChannel)?;
                                         }
                                     }
                                     Err(e) => {
                                         println!("---\n[ERROR] [Serde] cannot parse\n - Origin message:\n{}\n - Actual error:\n{}\n---\n", message.data, e);
-                                        app_handle
-                                            .emit(&format!("{hook_id}_error"), format!("[serde_error] {e}"))
-                                            .map_err(Error::EmitFailed)?;
+                                        channel.send(StreamEvent::Error(StreamError {
+                                            error_type: StreamErrorType::Serialize,
+                                            detail: StreamErrorDetail::String(e.to_string()),
+                                        })).map_err(Error::StreamChannel)?;
+                                        msg_list.push(Message {
+                                            role: MessageRole::System,
+                                            content: e.to_string(),
+                                        });
                                         continue;
                                     }
                                 }
@@ -120,45 +117,34 @@ impl AiService {
                         Some(Err(e)) => match e {
                             reqwest_eventsource::Error::StreamEnded => break,
                             reqwest_eventsource::Error::InvalidStatusCode(s,e) => {
-                                app_handle
-                                    .emit(
-                                        &format!("{hook_id}_error"),
-                                        MessageError {
-                                            error_type:
-                                                MessageErrorType::RequestSending,
-                                            detail: reqwest_eventsource::Error::InvalidStatusCode(s, e).to_string(),
-                                        },
-                                    )
-                                    .map_err(Error::EmitFailed)?;
+                                let error_msg = reqwest_eventsource::Error::InvalidStatusCode(s, e).to_string();
+                                channel.send(StreamEvent::Error(StreamError {
+                                    error_type: StreamErrorType::RequestSending,
+                                    detail: StreamErrorDetail::String(error_msg.clone()),
+                                })).map_err(Error::StreamChannel)?;
+                                msg_list.push(Message {
+                                    role: MessageRole::System,
+                                    content: error_msg,
+                                });
+                                return Err(Error::InterceptedEventsource);
                             }
                             reqwest_eventsource::Error::Transport(e) => {
                                 if e.is_request() {
-                                    app_handle
-                                        .emit(
-                                            &format!("{hook_id}_error"),
-                                            MessageError {
-                                                error_type:
-                                                    MessageErrorType::RequestSending,
-                                                detail: reqwest_eventsource::Error::Transport(e).to_string(),
-                                            },
-                                        )
-                                        .map_err(Error::EmitFailed)?;
+                                    let error_msg = reqwest_eventsource::Error::Transport(e).to_string();
+                                    channel.send(StreamEvent::Error(StreamError {
+                                        error_type: StreamErrorType::RequestSending,
+                                        detail: StreamErrorDetail::String(error_msg.clone()),
+                                    })).map_err(Error::StreamChannel)?;
+                                    msg_list.push(Message {
+                                        role: MessageRole::System,
+                                        content: error_msg,
+                                    });
+                                    return Err(Error::InterceptedEventsource);
                                 } else {
-                                    println!("{}", Error::Eventsource(reqwest_eventsource::Error::Transport(e)));
+                                    return Err(Error::Eventsource(reqwest_eventsource::Error::Transport(e)));
                                 }
                             }
-                            reqwest_eventsource::Error::Utf8(e) => {
-                                println!("{}", Error::Eventsource(reqwest_eventsource::Error::Utf8(e)));
-                            }
-                            reqwest_eventsource::Error::Parser(e) => {
-                                println!("{}", Error::Eventsource(reqwest_eventsource::Error::Parser(e)));
-                            }
-                            reqwest_eventsource::Error::InvalidContentType(h,e) => {
-                                println!("{}", Error::Eventsource(reqwest_eventsource::Error::InvalidContentType(h,e)));
-                            }
-                            reqwest_eventsource::Error::InvalidLastEventId(e) => {
-                                println!("{}", Error::Eventsource(reqwest_eventsource::Error::InvalidLastEventId(e)));
-                            }
+                            _ => {}
                         },
                         _ => {}
                     }
@@ -169,6 +155,15 @@ impl AiService {
                     break;
                 }
             }
+        }
+        if full_text.trim().is_empty() {
+            channel
+                .send(StreamEvent::End {
+                    interrupted,
+                    messages: Vec::new(),
+                })
+                .map_err(Error::StreamChannel)?;
+            return Ok(());
         }
         msg_list.push(Message {
             role: MessageRole::Assistant,
@@ -181,15 +176,12 @@ impl AiService {
             });
         }
         drop(msg_list);
-        app_handle
-            .emit(
-                &format!("{hook_id}_end"),
-                StreamEndMessage {
-                    interrupted,
-                    messages: messages.read().await.to_vec(),
-                },
-            )
-            .map_err(Error::EmitFailed)?;
+        channel
+            .send(StreamEvent::End {
+                interrupted,
+                messages: messages.read().await.to_vec(),
+            })
+            .map_err(Error::StreamChannel)?;
         Ok(())
     }
     fn _extract_content(response: AiResponse) -> Option<String> {
@@ -199,13 +191,13 @@ impl AiService {
             .next()
             .map(|choice| choice.message.content)
     }
-    fn extract_stream_reason(response: StreamResponse) -> Option<String> {
-        response
-            .choices
-            .into_iter()
-            .next()
-            .map(|choice| choice.delta.reasoning_content)?
-    }
+    // fn extract_stream_reason(response: StreamResponse) -> Option<String> {
+    //     response
+    //         .choices
+    //         .into_iter()
+    //         .next()
+    //         .map(|choice| choice.delta.reasoning_content)?
+    // }
     fn extract_stream_content(response: StreamResponse) -> Option<String> {
         response
             .choices
@@ -213,7 +205,7 @@ impl AiService {
             .next()
             .map(|choice| choice.delta.content)?
     }
-    async fn check_props(&self, hook_id: Option<String>) -> Result<(), Error> {
+    async fn check_props(&self, channel: Option<Channel<StreamEvent>>) -> Result<(), Error> {
         let mut empty_items = Vec::new();
         if self.endpoint.read().await.is_empty() {
             empty_items.push(Parameter::Endpoint);
@@ -227,20 +219,17 @@ impl AiService {
         if empty_items.is_empty() {
             Ok(())
         } else {
-            if let Some(hook_id) = hook_id {
-                let _ = self.app_handle.emit(
-                    &format!("{hook_id}_error"),
-                    MessageError {
-                        error_type: MessageErrorType::EmptyParameter,
-                        detail: empty_items.clone(),
-                    },
-                );
+            if let Some(channel) = channel {
+                let _ = channel.send(StreamEvent::Error(StreamError {
+                    error_type: StreamErrorType::EmptyParameter,
+                    detail: StreamErrorDetail::Parameter(empty_items.clone()),
+                }));
             }
             Err(Error::EmptyParameter(empty_items))
         }
     }
-    pub async fn send(&self, content: String, hook_id: String) -> Result<(), Error> {
-        self.check_props(Some(hook_id.clone())).await?;
+    pub async fn send(&self, content: String, channel: Channel<StreamEvent>) -> Result<(), Error> {
+        self.check_props(Some(channel.clone())).await?;
         self.stop().await?;
         self.messages.write().await.push(Message {
             role: MessageRole::User,
@@ -278,15 +267,12 @@ impl AiService {
         }
         let (tx_stop, rx_stop) = oneshot::channel();
         *stop = Some(tx_stop);
-
-        let app_handle = self.app_handle.clone();
         let messages = self.messages.clone();
 
         spawn(AiService::parse_siliconflow(
-            app_handle,
+            channel,
             eventsource,
             messages,
-            hook_id,
             rx_stop,
         ));
         Ok(())
@@ -295,13 +281,14 @@ impl AiService {
         self.check_props(None).await?;
         if let Some(stop) = self.stop_sender.lock().await.take() {
             let _ = stop.send(());
-        };
+        }
         Ok(())
     }
     pub async fn get_history(&self) -> Vec<Message> {
         self.messages.read().await.to_vec()
     }
     pub async fn clear_history(&self) {
+        let _ = self.stop().await;
         self.messages.write().await.clear();
     }
 }

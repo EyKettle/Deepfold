@@ -3,6 +3,28 @@ type Message = {
   content: string;
 };
 
+type Parameter = "endpoint" | "apiKey" | "modelName";
+
+type StreamEvent =
+  | {
+      event: "push";
+      data: string;
+    }
+  | {
+      event: "end";
+      data: {
+        interrupted: boolean;
+        messages: Message[];
+      };
+    }
+  | {
+      event: "error";
+      data: {
+        type: "emptyParameter" | "requestSending" | "serialize";
+        detail: string | Parameter[];
+      };
+    };
+
 type StreamEndMessage = {
   interrupted: boolean;
   messages: Message[];

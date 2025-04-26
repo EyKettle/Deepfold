@@ -4,12 +4,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum MessageRole {
-    #[serde(rename = "user")]
     User,
-    #[serde(rename = "assistant")]
     Assistant,
-    #[serde(rename = "system")]
     System,
 }
 
@@ -44,15 +42,15 @@ pub struct ResponseFormat {
 #[derive(Debug, Serialize)]
 pub struct Tool {
     #[serde(rename = "type")]
-    tool_type: String,
+    pub tool_type: String,
 }
 
 #[derive(Debug, Serialize)]
 struct FunctionDefinition {
-    description: String,
-    name: String,
-    parameters: HashMap<String, serde_json::Value>,
-    strict: bool,
+    pub description: String,
+    pub name: String,
+    pub parameters: HashMap<String, serde_json::Value>,
+    pub strict: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -74,9 +72,9 @@ pub struct Choice {
 
 #[derive(Debug, Deserialize)]
 struct Usage {
-    prompt_tokens: u32,
-    completion_tokens: u32,
-    total_tokens: u32,
+    pub prompt_tokens: u32,
+    pub completion_tokens: u32,
+    pub total_tokens: u32,
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -107,6 +107,8 @@ body {
   --color-surface-glass-darker: rgba(234, 234, 234, 0.4);
 
   --color-solid-primary: white;
+  --color-solid-secondary: hsl(0, 0%, 95%);
+  --color-solid-tertiary: hsl(0, 0%, 84%);
 
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-shadow-auto: none;
@@ -134,14 +136,16 @@ body {
   --color-switch-onActive: var(--color-theme-accent-text);
 
   --color-input-default: var(--color-surface-dark);
+  --color-input-solid: var(--color-solid-primary);
+
+  --color-code-back: var(--color-solid-primary);
 
   --color-chat-own-back-default: var(--color-theme-accent-background);
   --color-chat-own-text-default: var(--color-theme-accent-text);
   --color-chat-other-back-default: var(--color-surface-hover);
   --color-chat-other-text-default: var(--color-theme-text);
 
-  /* 自定义变量 */
-  --color-msg-error-text: #9c0e0e;
+  --color-msg-error-text: rgb(184, 18, 18);
   --color-msg-error-back: #ff9e9e;
   --color-msg-warn-text: #644312;
   --color-msg-warn-back: #e9c679;
@@ -151,7 +155,11 @@ body {
   --color-dev-back: hsla(0, 61%, 71%, 0.6);
   --color-msg-nothing-text: var(--color-theme-text);
   --color-msg-nothing-back: rgba(0, 0, 0, 0.06);
-  /* 自定义变量 */
+
+  --color-status-offline: hsla(0, 0%, 0%, 0.1);
+  --color-status-online: hsla(135, 47%, 44%, 0.6);
+  --color-status-typing: hsla(209, 93%, 57%, 0.6);
+  --color-status-wrong: hsla(0, 93%, 57%, 0.6);
 
   transition: all 0.2s;
   height: 100%;
@@ -188,7 +196,9 @@ html {
     --color-surface-glass-dark: rgba(32, 32, 32, 0.6);
     --color-surface-glass-darker: rgba(26, 26, 26, 0.6);
 
-    --color-solid-primary: hsl(0, 0%, 20%);
+    --color-solid-primary: hsl(0, 0%, 25%);
+    --color-solid-secondary: hsl(0, 0%, 20%);
+    --color-solid-tertiary: hsl(0, 0%, 15%);
 
     --color-shadow: rgba(0, 0, 0, 0.3);
     --color-shadow-auto: var(--color-shadow);
@@ -209,10 +219,12 @@ html {
     --color-border-down: rgba(0, 0, 0, 0.4);
 
     --color-input-default: var(--color-surface-default);
+    --color-input-solid: var(--color-solid-secondary);
+
+    --color-code-back: var(--color-surface-default);
 
     --color-switch-hover: rgba(255, 255, 255, 0.06);
 
-    /* 自定义变量 */
     --color-msg-error-back: #9c0e0e;
     --color-msg-error-text: #ff9e9e;
     --color-msg-warn-back: #644312;
@@ -222,7 +234,6 @@ html {
     --color-dev-text: #f85555;
     --color-dev-back: hsla(0, 51%, 26%, 0.6);
     --color-msg-nothing-back: rgba(0, 0, 0, 0.18);
-    /* 自定义变量 */
 
     #page-setting {
       --color-switch-hover: unset;
@@ -293,5 +304,17 @@ textarea {
   }
   100% {
     rotate: 360deg;
+  }
+}
+
+@keyframes typingBar {
+  0% {
+    stroke-dashoffset: 19;
+  }
+  50% {
+    stroke-dashoffset: -17;
+  }
+  100% {
+    stroke-dashoffset: 19;
   }
 }

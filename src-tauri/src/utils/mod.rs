@@ -1,4 +1,3 @@
-use futures::TryFutureExt;
 use local_data::{CoreData, LocalData, Theme};
 use serde::Serialize;
 use tauri::State;
