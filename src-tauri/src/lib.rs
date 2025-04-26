@@ -40,8 +40,8 @@ pub fn run() {
         .plugin(
             tauri::plugin::Builder::<tauri::Wry, ()>::new("ProperNavigation")
                 .on_navigation(|_, url| {
-                    // allow the production URL or localhost on dev
                     if url.scheme() == "tauri"
+                        || url.host_str() == Some("tauri.localhost")
                         || (cfg!(dev) && url.host_str() == Some("localhost"))
                     {
                         true

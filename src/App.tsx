@@ -24,7 +24,7 @@ enum Pages {
 function App() {
   let version: Version = {
     code: "DEV",
-    number: "0.1.5",
+    number: "0.1.6",
   };
 
   const [messages, setMessages] = createSignal<Message[]>([]);
