@@ -2,16 +2,17 @@ import {
   type Component,
   createEffect,
   createSignal,
-  For,
   JSX,
+  Match,
   onCleanup,
   onMount,
   Show,
+  Switch,
 } from "solid-js";
 
 interface ButtonProps {
-  icon?: string;
-  iconColors?: string[];
+  icon?: string | Element;
+  iconColors?: string;
   label?: string;
   type?: "button" | "ghost";
   rounded?: boolean;
@@ -25,45 +26,42 @@ interface ButtonProps {
   borderRadius?: string;
   class?: string;
   style?: JSX.CSSProperties;
-  iconStyle?: JSX.CSSProperties[];
+  iconStyle?: JSX.CSSProperties;
   disabled?: boolean;
-  onClick?: () => void;
+  onClick?: (element: HTMLButtonElement) => void;
   getAnimates?: (press: () => void, release: () => void) => void;
 }
 
 export const Button: Component<ButtonProps> = (props) => {
-  let element: HTMLButtonElement | null = null;
+  let element: HTMLButtonElement;
   let isTouch = false;
 
   const [defaultStyle, setDefaultStyle] = createSignal({
-    fontSize: "1.05rem",
+    fontSize: "1.125rem",
   });
 
   const onEnterDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter" && !props.disabled && element) {
+    if (e.key === "Enter" && !props.disabled) {
       e.preventDefault();
       element.style.scale = "0.95";
     }
   };
   const onEnterUp = (e: KeyboardEvent) => {
-    if (e.key === "Enter" && !props.disabled && element) {
+    if (e.key === "Enter" && !props.disabled) {
       element.style.scale = "1";
-      props.onClick?.();
+      props.onClick?.(element);
     }
   };
 
   const applyMousedown = () => {
-    if (element)
-      element.style.backgroundColor = `var(--color-${props.type}-active)`;
+    element.style.backgroundColor = `var(--color-${props.type}-active)`;
   };
   const applyMouseleave = () => {
-    if (element)
-      element.style.backgroundColor = `var(--color-${props.type}-default)`;
+    element.style.backgroundColor = `var(--color-${props.type}-default)`;
   };
   props.getAnimates?.(applyMousedown, applyMouseleave);
 
   createEffect(() => {
-    if (!element) return;
     if (props.disabled) {
       element.tabIndex = -1;
     } else {
@@ -72,10 +70,6 @@ export const Button: Component<ButtonProps> = (props) => {
   });
 
   onMount(() => {
-    if (!element) {
-      console.warn("Button element just disappeared?");
-      return;
-    }
     if (!props.type) props.type = "button";
     if (props.type === "button") {
       element.style.borderStyle = "solid";
@@ -109,21 +103,21 @@ export const Button: Component<ButtonProps> = (props) => {
       switch (props.size) {
         case "medium":
           element.style.minHeight = element.style.minWidth = "3rem";
-          element.style.padding = "1rem";
+          element.style.padding = "0.75rem 1rem";
           setDefaultStyle({ fontSize: "1.25rem" });
           if (props.rounded || props.borderRadius) break;
           element.style.borderRadius = "0.75rem";
           break;
         case "large":
           element.style.minHeight = element.style.minWidth = "3.5rem";
-          element.style.padding = "1.5rem";
+          element.style.padding = "1rem 1.5rem";
           setDefaultStyle({ fontSize: "1.75rem" });
           if (props.rounded || props.borderRadius) break;
           element.style.borderRadius = "1.25rem";
           break;
       }
     } else {
-      element.style.padding = "0.75rem";
+      element.style.padding = "0.5rem 0.75rem";
       if (!props.rounded && !props.borderRadius) {
         element.style.borderRadius = "0.5rem";
       }
@@ -134,7 +128,6 @@ export const Button: Component<ButtonProps> = (props) => {
   });
 
   onCleanup(() => {
-    if (!element) return;
     element.removeEventListener("keydown", onEnterDown);
     element.removeEventListener("keyup", onEnterUp);
   });
@@ -148,10 +141,8 @@ export const Button: Component<ButtonProps> = (props) => {
         "grid-template-columns": `${props.icon && defaultStyle().fontSize} ${
           props.label && "auto"
         }`,
-        "flex-shrink": 0,
         "align-items": "center",
-        "vertical-align": "sub",
-        "line-height": "1",
+        "vertical-align": "middle",
         "min-height": "2.5rem",
         "min-width": "2.5rem",
         "font-size": defaultStyle().fontSize,
@@ -159,7 +150,7 @@ export const Button: Component<ButtonProps> = (props) => {
         "transition-duration": "0.3s",
         "transition-timing-function": "cubic-bezier(0, 0, 0, 1)",
         "will-change": "scale",
-        cursor: "pointer",
+        cursor: props.disabled ? "unset" : "pointer",
         ...props.style,
       }}
       on:mouseenter={(e) => {
@@ -194,37 +185,29 @@ export const Button: Component<ButtonProps> = (props) => {
           e.currentTarget.style.backgroundColor = `var(--color-${props.type}-default)`;
       }}
       on:click={() => {
-        if (!props.disabled && !isTouch) props.onClick?.();
+        if (!props.disabled && !isTouch) props.onClick?.(element);
       }}
     >
-      <Show when={props.icon}>
-        <div
-          style={{
-            display: "grid",
-            "place-items": "center",
-            "white-space": "nowrap",
-          }}
-        >
-          <For each={Array.from(props.icon ?? "")}>
-            {(char, index) => (
-              <span
-                style={{
-                  "font-family": "var(--font-icon)",
-                  zoom: index() === 0 ? 0.95 : 1,
-                  color: props.iconColors ? props.iconColors[index()] : "unset",
-                  ...props.iconStyle?.at(index()),
-                }}
-              >
-                {char}
-              </span>
-            )}
-          </For>
-        </div>
-      </Show>
+      <Switch>
+        <Match when={typeof props.icon === "string"}>
+          <span
+            style={{
+              "font-family": "var(--font-icon)",
+              color: props.iconColors,
+              "user-select": "none",
+              ...props.iconStyle,
+            }}
+          >
+            {props.icon}
+          </span>
+        </Match>
+        <Match when={typeof props.icon === "object"}>{props.icon}</Match>
+      </Switch>
       <Show when={props.label}>
         <span
           style={{
             "margin-inline": parseFloat(defaultStyle().fontSize) / 4 + "rem",
+            "user-select": "none",
           }}
         >
           {props.label}

@@ -1,6 +1,6 @@
 {
   "name": "deepfold",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "",
   "type": "module",
   "scripts": {
@@ -18,8 +18,6 @@
     "@tauri-apps/plugin-shell": "^2",
     "@tauri-apps/plugin-window-state": "^2.2.2",
     "motion": "^11.14.4",
-    "postcss": "^8.5.3",
-    "postcss-preset-env": "^10.1.6",
     "remark-gfm": "^4.0.1",
     "solid-js": "^1.7.8",
     "solid-markdown": "^2.0.14",
@@ -29,8 +27,14 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2",
     "@types/node": "^22.10.5",
+    "@types/prismjs": "^1.26.5",
+    "postcss": "^8.5.3",
+    "postcss-preset-env": "^10.1.7",
+    "prismjs": "^1.30.0",
     "typescript": "^5.2.2",
     "vite": "^6.3.3",
-    "vite-plugin-solid": "^2.8.0"
+    "vite-plugin-prismjs": "^0.0.11",
+    "vite-plugin-solid": "^2.8.0",
+    "vite-plugin-svg-icons-ng": "^1.4.0"
   }
 }

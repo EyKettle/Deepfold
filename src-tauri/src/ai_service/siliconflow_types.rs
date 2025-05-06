@@ -1,21 +1,11 @@
-use std::collections::HashMap;
-
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 use serde_json::Value;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum MessageRole {
-    User,
-    Assistant,
-    System,
-}
+use super::openai_types::{ self, AiResponse };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Message {
-    pub role: MessageRole,
-    pub content: String,
-}
+pub type MessageRole = openai_types::MessageRole;
+pub type Message = openai_types::Message;
+pub type Tool = openai_types::Tool;
 
 #[derive(Debug, Serialize)]
 pub struct RequestBody {
@@ -39,65 +29,71 @@ pub struct ResponseFormat {
     pub response_type: String,
 }
 
-#[derive(Debug, Serialize)]
-pub struct Tool {
-    #[serde(rename = "type")]
-    pub tool_type: String,
-}
-
-#[derive(Debug, Serialize)]
-struct FunctionDefinition {
-    pub description: String,
-    pub name: String,
-    pub parameters: HashMap<String, serde_json::Value>,
-    pub strict: bool,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct AiResponse {
-    pub id: String,
-    pub object: String,
-    pub created: u64,
-    pub model: String,
-    pub choices: Vec<Choice>,
-    pub usage: Usage,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Choice {
-    pub index: u32,
-    pub message: Message,
-    pub finish_reason: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct Usage {
-    pub prompt_tokens: u32,
-    pub completion_tokens: u32,
-    pub total_tokens: u32,
-}
-
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreamResponse {
     pub id: String,
     pub object: String,
     pub created: u64,
     pub model: String,
     pub choices: Vec<StreamChoice>,
-    pub system_fingerprint: Option<String>,
     pub usage: Option<Value>,
+    pub system_fingerprint: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreamChoice {
     pub delta: StreamDelta,
     pub index: u32,
     pub finish_reason: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreamDelta {
     pub content: Option<String>,
-    pub role: Option<String>,
     pub reasoning_content: Option<String>,
+    pub role: Option<String>,
+    pub tool_calls: Option<Vec<ToolCall>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolCall {
+    pub index: usize,
+    pub function: CallFunction,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallFunction {
+    pub name: Option<String>,
+    pub arguments: Option<String>,
+}
+
+pub fn _extract_content(response: AiResponse) -> Option<String> {
+    response.choices
+        .into_iter()
+        .next()
+        .map(|choice| choice.message.content)
+}
+pub fn _extract_stream_reason(response: StreamResponse) -> Option<String> {
+    response.choices
+        .into_iter()
+        .next()
+        .map(|choice| choice.delta.reasoning_content)?
+}
+pub fn extract_stream_content(response: StreamResponse) -> Option<String> {
+    response.choices
+        .into_iter()
+        .next()
+        .map(|choice| choice.delta.content)?
+}
+
+pub fn get_tool_calls(response: StreamResponse) -> Result<Vec<ToolCall>, ()> {
+    let calls = response.choices
+        .into_iter()
+        .next()
+        .map(|choice| choice.delta.tool_calls);
+    if let Some(Some(calls)) = calls {
+        Ok(calls)
+    } else {
+        Err(())
+    }
 }

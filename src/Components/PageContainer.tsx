@@ -10,6 +10,7 @@ type PageInfo = {
 };
 
 interface PageContainerProps {
+  ref?: (element: HTMLDivElement) => void;
   children: JSXElement[];
   pageInfos: PageInfo[];
   class?: string;
@@ -23,12 +24,20 @@ interface PageContainerProps {
     switchDirection: [number, number],
     container: HTMLDivElement
   ) => Promise<void>;
+  transitionMotion?: (
+    backgroundPage: HTMLDivElement,
+    popupPage: HTMLDivElement,
+    isForward: boolean,
+    switchDirection: [number, number],
+    container: HTMLDivElement
+  ) => void;
   homeIndex?: number;
   defaultIndex: number;
   routeMode?: "none" | "spa" | "fakeRouter";
-  getMethods: (
+  getOps: (
     switchTo: (index: number, param?: string, replace?: boolean) => void,
-    getFrontIndex: () => number
+    getFrontIndex: () => number,
+    transitionTo: (index: number, replace?: boolean) => void
   ) => void;
 }
 
@@ -161,8 +170,10 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
     }
   };
 
+  const transitionTo = (index: number, replace?: boolean) => {};
+
   const getFrontIndex = () => frontIndex;
-  props.getMethods(handleSwitch, getFrontIndex);
+  props.getOps(handleSwitch, getFrontIndex, transitionTo);
 
   const handleScroll = (e: Event) => {
     if (e.target instanceof HTMLDivElement) scrolledItems.add(e.target);
@@ -210,7 +221,10 @@ export const PageContainer: Component<PageContainerProps> = (props) => {
 
   return (
     <div
-      ref={(e) => (container = e)}
+      ref={(e) => {
+        container = e;
+        props.ref?.(e);
+      }}
       class={props.class}
       style={{
         height: "100%",

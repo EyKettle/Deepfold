@@ -1,17 +1,20 @@
-use tauri::{async_runtime::spawn, Manager, Theme};
+use tauri::{ async_runtime::spawn, Manager, Theme };
 
 mod ai_service;
 mod utils;
 
 use ai_service::{
-    ai_calling::AiService, ai_service_clear, ai_service_history, ai_service_init, ai_service_reset,
-    ai_service_send, ai_service_stop,
+    ai_calling::AiService,
+    ai_service_clear,
+    ai_service_history,
+    ai_service_init,
+    ai_service_reset,
+    ai_service_send,
+    ai_service_stop,
+    ai_service_get_logs,
 };
 use tauri_plugin_opener::open_url;
-use utils::{
-    config_load, config_read, config_save, config_set,
-    local_data::{self, LocalData},
-};
+use utils::{ config_load, config_read, config_save, config_set, local_data::{ self, LocalData } };
 
 #[tauri::command]
 async fn get_version(app: tauri::AppHandle) -> Result<String, ()> {
@@ -32,17 +35,20 @@ fn switch_theme(app: tauri::AppHandle, theme_mode: &str) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    tauri::Builder
+        ::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(
-            tauri::plugin::Builder::<tauri::Wry, ()>::new("ProperNavigation")
+            tauri::plugin::Builder::<tauri::Wry, ()>
+                ::new("ProperNavigation")
                 .on_navigation(|_, url| {
-                    if url.scheme() == "tauri"
-                        || url.host_str() == Some("tauri.localhost")
-                        || (cfg!(dev) && url.host_str() == Some("localhost"))
+                    if
+                        url.scheme() == "tauri" ||
+                        url.host_str() == Some("tauri.localhost") ||
+                        (cfg!(dev) && url.host_str() == Some("localhost"))
                     {
                         true
                     } else {
@@ -50,7 +56,7 @@ pub fn run() {
                         false
                     }
                 })
-                .build(),
+                .build()
         )
         .setup(|app| {
             if let Ok(config_dir) = app.path().app_config_dir() {
@@ -73,25 +79,26 @@ pub fn run() {
             });
 
             let window = app.get_webview_window("main").unwrap();
-            window
-                .show()
-                .expect("Initialized failed because of show window failed.");
+            window.show().expect("Initialized failed because of show window failed.");
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            get_version,
-            switch_theme,
-            config_set,
-            config_load,
-            config_save,
-            config_read,
-            ai_service_init,
-            ai_service_reset,
-            ai_service_send,
-            ai_service_stop,
-            ai_service_history,
-            ai_service_clear,
-        ])
+        .invoke_handler(
+            tauri::generate_handler![
+                get_version,
+                switch_theme,
+                config_set,
+                config_load,
+                config_save,
+                config_read,
+                ai_service_init,
+                ai_service_reset,
+                ai_service_send,
+                ai_service_stop,
+                ai_service_history,
+                ai_service_clear,
+                ai_service_get_logs,
+            ]
+        )
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

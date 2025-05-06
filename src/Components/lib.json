@@ -1,8 +1,11 @@
 {
-  "version": "0.0.21",
+  "version": "0.0.23",
   "changed": [
-    "./app.css",
-    "./markdown.css",
+    {
+      "target": "./app.css",
+      "desc": ["Theme colors", "Add solid color", "Change media to dark label"]
+    },
+    { "target": "./markdown.css", "desc": ["Theme colors"] },
     {
       "target": "./chatInputBox.tsx",
       "desc": ["Apply solid surface"]
@@ -14,6 +17,7 @@
     {
       "target": "./card.tsx",
       "desc": ["Add shadow switch and custom shadow", "Extend on:event"]
-    }
+    },
+    { "target": "./svgIcon.tsx", "desc": ["Config icon list"] }
   ]
 }

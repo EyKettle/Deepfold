@@ -16,6 +16,7 @@ interface SettingPageProps {
     clearMessages: () => void;
     resetService: () => void;
     saveConfig: () => void;
+    openLog: (startingElement: HTMLButtonElement) => void;
   };
   getOps: (switchTheme: (theme: Theme) => void) => void;
 }
@@ -34,6 +35,7 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         "padding-inline": "0.5rem",
         "--color-shadow-auto": "none",
         "padding-bottom": "2rem",
+        overflow: "scroll",
       }}
       card-width="100%"
     >
@@ -222,12 +224,23 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         title="后端记录"
         style={{
           "padding-bottom": "1.5rem",
+          "white-space": "pre-wrap",
         }}
+        textSelected={true}
       >
+        <Button label="查询最新 Streaming" onClick={props.operations.openLog} />
         <For
           each={props.messages}
           fallback={
-            <p style={{ opacity: 0.6, "margin-bottom": "0.5rem" }}>没有消息</p>
+            <p
+              style={{
+                opacity: 0.6,
+                "margin-bottom": "0.5rem",
+                "user-select": "none",
+              }}
+            >
+              没有消息
+            </p>
           }
         >
           {(item, index) => (

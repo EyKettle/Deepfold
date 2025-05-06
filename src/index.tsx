@@ -2,6 +2,7 @@
 import { render } from "solid-js/web";
 import App from "./App";
 import { window } from "@tauri-apps/api";
+import "virtual:svg-icons/register";
 
 window
   .getCurrentWindow()

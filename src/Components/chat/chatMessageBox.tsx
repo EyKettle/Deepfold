@@ -49,7 +49,7 @@ const ChatMessageBubble: Component<ChatMessageBubbleProps> = (props) => {
         appearance.style.borderRadius = 1.0625 * fontSize.value + fontSize.unit;
         appearance.style.minHeight = 1.5 * fontSize.value + fontSize.unit;
         appearance.style.paddingBlock = 0.25 * fontSize.value + fontSize.unit;
-        appearance.style.paddingInline = 0.6 * fontSize.value + fontSize.unit;
+        appearance.style.paddingInline = 0.625 * fontSize.value + fontSize.unit;
         if (props.position === BubblePosition.Start)
           appearance.style.marginTop = "0.25rem";
 
@@ -155,7 +155,7 @@ interface ChatMessageBoxProps {
   bubbleStyle?: JSX.CSSProperties;
   paddingTop?: string;
   paddingBottom?: string;
-  snapOffset?: number;
+  alignOffset?: number;
   showupMotion?: (element: HTMLDivElement) => Promise<void>;
   getListOps?: (
     append: (info: ChatMessage, open?: boolean) => number,
@@ -173,7 +173,8 @@ interface ChatMessageBoxProps {
     getStartIndex: () => number,
     getEndIndex: () => number,
     scrollToIndex: (index: number, opts?: ScrollToIndexOpts) => void,
-    alignBottom: (sudden?: boolean) => void
+    alignCheck: () => boolean,
+    isScrolling: () => boolean
   ) => void;
 }
 
@@ -191,22 +192,27 @@ const ChatMessageBox: Component<ChatMessageBoxProps> = (props) => {
     Array<ChatBubble | HTMLDivElement>
   >([]);
 
-  const alignBottom = (sudden?: boolean) => {
-    if (
-      props.snapOffset &&
-      vlist &&
+  const alignCheck = () => {
+    return (
+      props.alignOffset !== undefined &&
+      vlist !== undefined &&
       vlist.scrollSize - (vlist.scrollOffset + vlist.viewportSize) <=
-        props.snapOffset
-    )
-      scrollToBottom(sudden ? 0 : undefined);
+        props.alignOffset &&
+      !scrolling
+    );
   };
   const submitUpdate = (scroll?: boolean, sudden?: boolean) => {
+    const willAlign =
+      props.alignOffset &&
+      vlist &&
+      vlist.scrollSize - (vlist.scrollOffset + vlist.viewportSize) <=
+        props.alignOffset;
     setRenderList([
       blocker(props.paddingTop),
       ...msgList,
       blocker(props.paddingBottom),
     ]);
-    if (scroll) alignBottom(sudden);
+    if (scroll && willAlign) scrollToBottom(sudden ? 0 : undefined);
   };
 
   const getPos = (
@@ -295,7 +301,7 @@ const ChatMessageBox: Component<ChatMessageBoxProps> = (props) => {
     animationQueue.delete(index);
     submitUpdate();
   };
-  const set = (index: number, content: any, snap?: boolean) => {
+  const set = (index: number, content: any, align?: boolean) => {
     const target = msgList[index];
     if (target) {
       target.content = content;
@@ -306,7 +312,7 @@ const ChatMessageBox: Component<ChatMessageBoxProps> = (props) => {
           insert(element, content);
         }
       }
-      submitUpdate(snap, true);
+      submitUpdate(align, true);
     }
   };
   const open = (index: number) => {
@@ -347,6 +353,8 @@ const ChatMessageBox: Component<ChatMessageBoxProps> = (props) => {
       });
     }
   };
+  let scrolling = false;
+  const isScrolling = () => scrolling;
   const getPosition = (): number => (vlist ? vlist.scrollOffset : 0);
   const getStartIndex = (): number => (vlist ? vlist.findStartIndex() : 0);
   const getEndIndex = (): number => (vlist ? vlist.findEndIndex() : 0);
@@ -359,7 +367,8 @@ const ChatMessageBox: Component<ChatMessageBoxProps> = (props) => {
     getStartIndex,
     getEndIndex,
     scrollToIndex,
-    alignBottom
+    alignCheck,
+    isScrolling
   );
 
   return (
@@ -371,10 +380,12 @@ const ChatMessageBox: Component<ChatMessageBoxProps> = (props) => {
       data={renderList()}
       class={props.class}
       style={{
-        "font-size": `${props.fontSize ?? "1rem"}`,
+        "font-size": props.fontSize ?? "1rem",
         "user-select": "text",
         ...props.style,
       }}
+      onScroll={() => (scrolling = true)}
+      onScrollEnd={() => (scrolling = false)}
     >
       {(item, index) => {
         const realIndex = index - 1;

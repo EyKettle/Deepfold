@@ -142,7 +142,7 @@ const SwitchItem: Component<SwitchItemProps> = (props) => {
         "place-items": "center",
         border: "none",
         padding: "0.5rem 1rem",
-        "font-size": `${props.fontSize ?? "1.05rem"}`,
+        "font-size": props.fontSize ?? "1.125rem",
         "background-color": defaultStyle.backgroundColor,
         "border-radius": "0.5rem",
         "border-width": 0,
@@ -213,10 +213,7 @@ export const Switch: Component<SwitchProps> = (props) => {
 
   const switchTo = (index: number, noAction?: boolean) => {
     setActiveIndex(index);
-    if (!noAction) {
-      props.onChange?.(index);
-      console.log("发生事件");
-    }
+    if (!noAction) props.onChange?.(index);
   };
   const getSelected = () => activeIndex();
   props.getOps?.(switchTo, getSelected);
@@ -229,15 +226,12 @@ export const Switch: Component<SwitchProps> = (props) => {
         "min-height": "2.5rem",
         gap: "0.4rem",
         padding: "0.5rem",
-        "background-color": `${
-          props.backgroundColor ?? "var(--color-surface-light)"
-        }`,
+        "background-color":
+          props.backgroundColor ?? "var(--color-surface-light)",
         "border-radius": "1rem",
         "border-style": "solid",
-        "border-color": `${
-          props.border?.color ?? "var(--color-border-default)"
-        }`,
-        "border-width": `${props.border?.width ?? "0.0625rem"}`,
+        "border-color": props.border?.color ?? "var(--color-border-default)",
+        "border-width": props.border?.width ?? "0.0625rem",
         "box-shadow": "0 0.0625rem 0 var(--color-shadow-auto)",
         ...props.style,
       }}

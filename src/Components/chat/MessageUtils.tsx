@@ -9,7 +9,8 @@ export const streamAiMessage = (
     append: (info: ChatMessage, open?: boolean) => number;
     set: (index: number, content: any, align?: boolean) => void;
     close: (index: number) => void;
-    alignBottom: (sudden?: boolean) => void;
+    alignCheck: () => boolean;
+    scrollToBottom: (duration?: number) => void;
   },
   sender: Sender
 ): {
@@ -39,7 +40,7 @@ export const streamAiMessage = (
           ></SolidMarkdown>
         </Show>
         <Show when={bottom() !== undefined}>
-          <div style={{ display: "inline-flex", width: "100%" }}>
+          <div style={{ display: "inline-flex", width: "100%", "margin-inline": "-0.5rem" }}>
             {bottom()}
           </div>
         </Show>
@@ -56,9 +57,10 @@ export const streamAiMessage = (
       );
   };
   const push = (str: string) => {
+    const willAlign = operations.alignCheck();
     check();
     setRaw(raw() + str);
-    operations.alignBottom(true);
+    if (willAlign) operations.scrollToBottom(0);
   };
   const setTopBar = (element: Element | JSXElement) => {
     check();

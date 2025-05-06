@@ -1,4 +1,4 @@
-import { createRoot, createSignal, onMount } from "solid-js";
+import { createRoot, createSignal, onMount, Show } from "solid-js";
 
 import { AiStatus, AppWindow } from "./controls/AppWindow";
 
@@ -11,10 +11,12 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import ChatInputBox from "./components/chat/chatInputBox";
 import { PageContainer } from "./components/pageContainer";
 import { ChatMessage, Sender } from "./components/chat/chatMessageBox";
-import { animate, animateMini } from "motion";
+import { animate, animateMini, AnimationOptions } from "motion";
 import { streamAiMessage } from "./components/chat/MessageUtils";
 import MessageStatusBar from "./controls/MessageStatusBar";
-import { requestErrorTip } from "./controls/MessageWidgets";
+import { requestErrorTip, toolCallTip } from "./controls/MessageWidgets";
+import StreamLog from "./popUps/streamLogs";
+import { parseToolCall } from "./utils/aiService";
 
 enum Pages {
   SettingPage = 0,
@@ -24,7 +26,7 @@ enum Pages {
 function App() {
   let version: Version = {
     code: "DEV",
-    number: "0.1.6",
+    number: "0.1.7",
   };
 
   const [messages, setMessages] = createSignal<Message[]>([]);
@@ -90,18 +92,28 @@ function App() {
           append,
           set,
           close,
-          alignBottom,
+          alignCheck,
+          scrollToBottom,
         },
         Sender.Other
       );
       const streamChannel = new Channel<StreamEvent>();
+      let tips: Element[] = [];
       streamChannel.onmessage = (message) => {
         switch (message.event) {
           case "push":
             markdownMessage.push(message.data);
             break;
+          case "tool":
+            const tip = parseToolCall(message.data);
+            tips.push(tip);
+            markdownMessage.setBottomBar(tips);
+            break;
           case "end":
-            if (message.data.messages.length === 0) break;
+            if (message.data.messages.length === 0) {
+              over();
+              break;
+            }
             setMessages(message.data.messages);
             if (message.data.interrupted) {
               markdownMessage.setBottomBar(
@@ -179,6 +191,9 @@ function App() {
                   ),
                 });
                 break;
+              case "serialize":
+                console.warn("Serialize error", message.data.detail);
+                break;
             }
             over();
             break;
@@ -228,11 +243,15 @@ function App() {
     {
       key: "F9",
       callback: () => {
-        invoke<string>("ai_service_test")
-          .then((msg) => {
-            append({ sender: Sender.Other, content: msg });
-          })
-          .catch(parseServiceError);
+        append({
+          sender: Math.random() > 0.5 ? Sender.Own : Sender.Other,
+          content: toolCallTip("X", "工具提示", "无状态", [
+            {
+              icon: "P",
+              callback: () => console.log("Clicked!!!!"),
+            },
+          ]),
+        });
       },
     },
     {
@@ -293,16 +312,116 @@ function App() {
   let set: (index: number, content: any, align?: boolean) => void;
   let close: (index: number) => void;
   let clearHistory: () => void;
-  let alignBottom: (sudden?: boolean) => void;
+  let alignCheck: () => boolean;
   let scrollToBottom: () => void;
+
+  let pageContainer: HTMLDivElement;
+  let streamLog: HTMLDivElement;
+  const [log, setLog] = createSignal<string[]>([]);
+  const [logHidden, setLogHidden] = createSignal(true);
+  let logClose: (() => void) | undefined;
+  const easeMedium: AnimationOptions = {
+    ease: [0.5, 0, 0, 1],
+    duration: 0.4,
+  };
+  const handleOpenLog = async (startingElement: HTMLButtonElement) => {
+    setLog(await invoke<string[]>("ai_service_get_logs", { index: 0 }));
+    setLogHidden(false);
+    animateMini(
+      pageContainer,
+      {
+        scale: 0.9,
+        opacity: 0.6,
+        filter: "blur(0.75rem)",
+      },
+      easeMedium
+    );
+
+    pageContainer.style.userSelect = "none";
+    pageContainer.ariaDisabled = "true";
+    pageContainer.style.pointerEvents = "none";
+    startingElement.style.visibility = "hidden";
+    const { y, height, width } = startingElement.getBoundingClientRect();
+    const containerRect = pageContainer.getBoundingClientRect();
+    const startY = y - containerRect.y;
+    animateMini(
+      streamLog,
+      {
+        translate: [`0 ${startY}px`, "0 2rem"],
+        height: [height, "calc(100vh - 12rem)"],
+        width: [width, "calc(100vw - 2rem)"],
+        border: [
+          "1px solid transparent",
+          "1px solid var(--color-border-default)",
+        ],
+        backgroundColor: [
+          startingElement.style.backgroundColor,
+          "var(--color-surface-glass)",
+        ],
+        borderRadius: ["0.75rem", "1rem"],
+        boxShadow: [
+          "0 0 0 var(--color-shadow)",
+          "0 16px 32px var(--color-shadow)",
+        ],
+      },
+      easeMedium
+    );
+    animateMini(
+      streamLog.children[0].children[1],
+      {
+        opacity: [0, 1],
+      },
+      easeMedium
+    );
+    logClose = () => {
+      logClose = undefined;
+      animateMini(
+        pageContainer,
+        {
+          scale: 1,
+          opacity: 1,
+          filter: "blur(0)",
+        },
+        easeMedium
+      );
+      animateMini(
+        streamLog,
+        {
+          translate: `0 ${startY}px`,
+          height: height,
+          width: width,
+          border: "1px solid transparent",
+          backgroundColor: startingElement.style.backgroundColor,
+          borderRadius: "0.75rem",
+          boxShadow: "0 0 0 var(--color-shadow)",
+        },
+        easeMedium
+      ).then(() => {
+        setLogHidden(true);
+        pageContainer.style.userSelect = "unset";
+        pageContainer.ariaDisabled = "false";
+        pageContainer.style.pointerEvents = "unset";
+        startingElement.style.visibility = "visible";
+      });
+      animateMini(
+        streamLog.children[0].children[1],
+        {
+          opacity: 0,
+        },
+        easeMedium
+      );
+    };
+  };
 
   return (
     <AppWindow
       aiStatus={aiStatus()}
       title="深度折叠"
       showSettings={handleShowSettings}
+      disableLabel={!logHidden()}
     >
       <PageContainer
+        ref={(c) => (pageContainer = c)}
         pageInfos={[
           {
             name: Pages[Pages.SettingPage],
@@ -313,14 +432,14 @@ function App() {
         ]}
         defaultIndex={Pages.HomePage}
         homeIndex={Pages.HomePage}
-        getMethods={(to) => {
+        getOps={(to) => {
           switchTo = to;
         }}
         pageInit={(page) => {
           page.style.display = "grid";
           page.style.placeItems = "center";
           page.style.willChange = "opacity, scale, filter";
-          page.style.overflow = "scroll";
+          page.style.overflow = "hidden";
         }}
         switchMotion={(prev, cur, _isForward, dir) =>
           new Promise<void>((resolve) => {
@@ -459,20 +578,32 @@ function App() {
             clearMessages,
             resetService,
             saveConfig,
+            openLog: handleOpenLog,
           }}
           getOps={(st) => (switchTheme = st)}
         />
         <HomePage
-          getOps={(a, s, cs, cr, ab, b) => {
+          getOps={(a, s, cs, cr, ac, b) => {
             append = a;
             set = s;
             close = cs;
             clearHistory = cr;
-            alignBottom = ab;
+            alignCheck = ac;
             scrollToBottom = b;
           }}
         />
       </PageContainer>
+      <Show when={!logHidden()}>
+        <StreamLog
+          ref={(e) => (streamLog = e)}
+          operations={{
+            close: () => {
+              logClose?.();
+            },
+          }}
+          children={log()}
+        />
+      </Show>
       <ChatInputBox
         showed={!showSettings()}
         onSubmit={handleSubmit}

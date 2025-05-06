@@ -1,29 +1,28 @@
 use ai_calling::AiService;
 use service_types::StreamEvent;
 use siliconflow_types::Message;
-use tauri::{async_runtime::spawn, ipc::Channel, Manager};
+use tauri::{ async_runtime::spawn, ipc::Channel, Manager };
 
-use crate::utils::{ErrorInfo, ErrorType};
+use crate::utils::{ ErrorInfo, ErrorType };
 
 pub mod ai_calling;
+mod tool_calls;
 mod errors;
 mod service_types;
 pub mod siliconflow_types;
+pub mod openai_types;
 
 #[tauri::command]
 pub async fn ai_service_init(
     endpoint: String,
     api_key: String,
     model_name: String,
-    ai_service: tauri::State<'_, AiService>,
+    ai_service: tauri::State<'_, AiService>
 ) -> Result<(), ErrorInfo> {
-    ai_service
-        .reset(Some(endpoint), Some(api_key), Some(model_name))
-        .await
-        .map_err(|e| ErrorInfo {
-            error_type: ErrorType::Warn,
-            message: e.to_string(),
-        })?;
+    ai_service.reset(Some(endpoint), Some(api_key), Some(model_name)).await.map_err(|e| ErrorInfo {
+        error_type: ErrorType::Warn,
+        message: e.to_string(),
+    })?;
     Ok(())
 }
 
@@ -32,15 +31,12 @@ pub async fn ai_service_reset(
     endpoint: String,
     api_key: String,
     model_name: String,
-    ai_service: tauri::State<'_, AiService>,
+    ai_service: tauri::State<'_, AiService>
 ) -> Result<(), ErrorInfo> {
-    ai_service
-        .reset(Some(endpoint), Some(api_key), Some(model_name))
-        .await
-        .map_err(|e| ErrorInfo {
-            error_type: ErrorType::Error,
-            message: e.to_string(),
-        })?;
+    ai_service.reset(Some(endpoint), Some(api_key), Some(model_name)).await.map_err(|e| ErrorInfo {
+        error_type: ErrorType::Error,
+        message: e.to_string(),
+    })?;
     Ok(())
 }
 
@@ -66,14 +62,23 @@ pub fn ai_service_stop(app: tauri::AppHandle) {
 
 #[tauri::command]
 pub async fn ai_service_history(
-    ai_service: tauri::State<'_, AiService>,
+    ai_service: tauri::State<'_, AiService>
 ) -> Result<Vec<Message>, ErrorInfo> {
     let messages = ai_service.get_history().await;
     Ok(messages)
 }
 
 #[tauri::command]
-pub async fn ai_service_clear(ai_service: tauri::State<'_, AiService>) -> Result<(), ErrorInfo> {
+pub async fn ai_service_clear(ai_service: tauri::State<'_, AiService>) -> Result<(), ()> {
     ai_service.clear_history().await;
     Ok(())
+}
+
+#[tauri::command]
+pub async fn ai_service_get_logs(
+    ai_service: tauri::State<'_, AiService>
+) -> Result<Vec<String>, ErrorInfo> {
+    ai_service
+        .get_logs().await
+        .map_err(|e| ErrorInfo { error_type: ErrorType::Error, message: e.to_string() })
 }

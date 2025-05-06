@@ -10,8 +10,8 @@ interface homePageProps {
     set: (index: number, content: any, align?: boolean) => void,
     close: (index: number) => void,
     clear: () => void,
-    alignBottom: (sudden?: boolean) => void,
-    scrollToBottom: () => void
+    alignCheck: () => boolean,
+    scrollToBottom: (duration?: number) => void
   ) => void;
 }
 
@@ -20,12 +20,11 @@ const HomePage: Component<homePageProps> = (props) => {
   let set: (index: number, content: any, align?: boolean) => void;
   let close: (index: number) => void;
   let clear: () => void;
-  let alignBottom: (sudden?: boolean) => void;
-  let scrollToBottom: () => void;
+  let alignCheck: () => boolean;
+  let scrollToBottom: (duration?: number) => void;
 
   onMount(() => {
-    if (props.getOps)
-      props.getOps(append, set, close, clear, alignBottom, scrollToBottom);
+    props.getOps?.(append, set, close, clear, alignCheck, scrollToBottom);
   });
 
   return (
@@ -39,7 +38,7 @@ const HomePage: Component<homePageProps> = (props) => {
       }}
       getScrollOps={(_t, toBottom, _p, _s, _e, _i, ab) => {
         scrollToBottom = toBottom;
-        alignBottom = ab;
+        alignCheck = ab;
       }}
       style={{
         "box-sizing": "border-box",
@@ -47,7 +46,7 @@ const HomePage: Component<homePageProps> = (props) => {
         "--color-border-default": "transparent",
         "justify-content": "start",
       }}
-      snapOffset={44}
+      alignOffset={44}
       showupMotion={(bubble) =>
         new Promise<void>((resolve) => {
           animate(
@@ -69,7 +68,7 @@ const HomePage: Component<homePageProps> = (props) => {
             {
               type: "spring",
               duration: 0.5,
-              bounce: 0.25,
+              bounce: 0.3,
             }
           ).then(resolve);
         })

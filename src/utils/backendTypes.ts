@@ -4,11 +4,19 @@ type Message = {
 };
 
 type Parameter = "endpoint" | "apiKey" | "modelName";
+type tools = "program_send_message";
 
 type StreamEvent =
   | {
       event: "push";
       data: string;
+    }
+  | {
+      event: "tool";
+      data: {
+        name: tools;
+        state: string;
+      };
     }
   | {
       event: "end";

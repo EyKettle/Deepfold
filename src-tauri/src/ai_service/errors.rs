@@ -13,14 +13,10 @@ pub enum Parameter {
 pub enum Error {
     #[error("Unexpected streaming")]
     UnexpectedStream,
-    #[error("Empty Parameter: {0:?}")]
-    EmptyParameter(Vec<Parameter>),
-    #[error("Fail to emit event: {0}")]
-    StreamChannel(tauri::Error),
-    #[error("Eventsource Error: {0}")]
-    Eventsource(reqwest_eventsource::Error),
+    #[error("Empty Parameter: {0:?}")] EmptyParameter(Vec<Parameter>),
+    #[error("Fail to emit event: {0}")] StreamChannel(tauri::Error),
+    #[error("Eventsource Error: {0}")] Eventsource(reqwest_eventsource::Error),
     #[error("An eventsource error occurred which been intercepted")]
     InterceptedEventsource,
-    #[error("Reqwest Error: {0}")]
-    Reqwest(reqwest_eventsource::CannotCloneRequestError),
+    #[error("Reqwest Error: {0}")] Reqwest(reqwest_eventsource::CannotCloneRequestError),
 }

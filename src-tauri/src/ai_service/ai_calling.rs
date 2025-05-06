@@ -1,29 +1,22 @@
-use std::sync::Arc;
+use std::{ collections::BTreeMap, sync::Arc };
 
-use futures::{FutureExt, StreamExt};
-use reqwest::{
-    header::{AUTHORIZATION, CONTENT_TYPE},
-    Client,
-};
-use reqwest_eventsource::{Event, EventSource};
-use tauri::{
-    async_runtime::{spawn, Mutex},
-    ipc::Channel,
-};
-use tokio::{
-    pin, select,
-    sync::{
-        oneshot::{self, Receiver, Sender},
-        RwLock,
-    },
-};
+use futures::{ FutureExt, StreamExt };
+use reqwest::{ header::{ AUTHORIZATION, CONTENT_TYPE }, Client };
+use reqwest_eventsource::{ Event, EventSource };
+use tauri::{ async_runtime::{ spawn, Mutex }, ipc::Channel };
+use tokio::{ pin, select, sync::{ oneshot::{ self, Receiver, Sender }, RwLock } };
 
-use crate::ai_service::service_types::{StreamError, StreamErrorDetail, StreamErrorType};
+use crate::ai_service::{
+    service_types::{ AiFeedbackMessage, StreamError, StreamErrorDetail, StreamErrorType },
+    siliconflow_types::{ self, CallFunction },
+    tool_calls::{ self, EmergencyLevel, ToolName },
+};
 
 use super::{
-    errors::{Error, Parameter},
+    errors::{ Error, Parameter },
     service_types::StreamEvent,
-    siliconflow_types::{AiResponse, Message, MessageRole, RequestBody, StreamResponse},
+    siliconflow_types::{ Message, MessageRole, RequestBody, StreamResponse, Tool },
+    tool_calls::get_tools,
 };
 
 pub struct AiService {
@@ -32,23 +25,36 @@ pub struct AiService {
     model_name: RwLock<String>,
     messages: Arc<RwLock<Vec<Message>>>,
     stop_sender: Arc<Mutex<Option<Sender<()>>>>,
+    logs: Arc<RwLock<Vec<String>>>,
+    tools: RwLock<Vec<Tool>>,
 }
 
 impl AiService {
     pub fn new(endpoint: String, api_key: String, model_name: String) -> Self {
         Self {
-            endpoint: RwLock::new(endpoint),
-            api_key: RwLock::new(api_key),
+            endpoint: RwLock::new(endpoint.clone()),
+            api_key: RwLock::new(api_key.clone()),
             model_name: RwLock::new(model_name),
-            messages: Arc::new(RwLock::new(Vec::new())),
+            messages: Arc::new(
+                RwLock::new(
+                    Vec::from([
+                        Message {
+                            role: super::openai_types::MessageRole::System,
+                            content: r#"你是若可，一个帮助开发者测试程序的助理，任何有关系统或程序的信息都可以告诉user"#.to_string(),
+                        },
+                    ])
+                )
+            ),
             stop_sender: Arc::new(Mutex::new(None)),
+            logs: Arc::new(RwLock::new(Vec::new())),
+            tools: RwLock::new(get_tools()),
         }
     }
     pub async fn reset(
         &self,
         endpoint: Option<String>,
         api_key: Option<String>,
-        model_name: Option<String>,
+        model_name: Option<String>
     ) -> Result<(), Error> {
         if let Some(ep) = endpoint {
             *self.endpoint.write().await = ep;
@@ -67,36 +73,49 @@ impl AiService {
         mut eventsource: EventSource,
         messages: Arc<RwLock<Vec<Message>>>,
         rx_stop: Receiver<()>,
+        logs: Arc<RwLock<Vec<String>>>
     ) -> Result<(), Error> {
         let mut msg_list = messages.write().await;
         let mut full_text = String::new();
+        let mut current_calls: BTreeMap<usize, CallFunction> = BTreeMap::new();
         let mut interrupted = false;
         let rx_stop = rx_stop.fuse();
         pin!(rx_stop);
 
+        logs.write().await.clear();
         loop {
             select! {
                 event = eventsource.next() => {
                     match event {
                         Some(Ok(Event::Message(message))) => {
                             if !message.data.trim().is_empty() && message.data != "[DONE]" {
+                                logs.write().await.push(serde_json::to_string_pretty(&serde_json::from_str::<serde_json::Value>(&message.data.clone()).unwrap_or_default()).unwrap_or_default());
                                 match serde_json::from_str::<StreamResponse>(&message.data) {
                                     Ok(response) => {
-                                        // TODO: reasoning support
-                                        // let mut emit_id = hook_id.clone();
                                         let content =
-                                            AiService::extract_stream_content(response.clone())
+                                            siliconflow_types::extract_stream_content(response.clone())
                                                 .unwrap_or_default();
-                                        // if content.is_empty() {
-                                        //     content = AiService::extract_stream_reason(response)
-                                        //         .unwrap_or_default();
-                                        //     if !content.trim().is_empty() {
-                                        //         emit_id = format!("{hook_id}_reason");
-                                        //     }
-                                        // }
                                         full_text += content.as_str();
                                         if !content.is_empty() {
                                             channel.send(StreamEvent::Push(content)).map_err(Error::StreamChannel)?;
+                                        }
+                                        if let Ok(tool_calls) = siliconflow_types::get_tool_calls(response.clone()) {
+                                            tool_calls.iter().for_each(|call| {
+                                                let value = current_calls.entry(call.index).or_insert_with(|| {CallFunction { name: None, arguments: None }});
+                                                if let Some(name) = call.function.name.clone() {
+                                                    value.name = Some(name);
+                                                }
+                                                if let Some(arg) = call.function.arguments.clone() {
+                                                    match &mut value.arguments {
+                                                        Some(existing_string) => {
+                                                            existing_string.push_str(&arg);
+                                                        }
+                                                        None => {
+                                                            value.arguments = Some(arg);
+                                                        }
+                                                    }
+                                                }
+                                            });
                                         }
                                     }
                                     Err(e) => {
@@ -105,10 +124,6 @@ impl AiService {
                                             error_type: StreamErrorType::Serialize,
                                             detail: StreamErrorDetail::String(e.to_string()),
                                         })).map_err(Error::StreamChannel)?;
-                                        msg_list.push(Message {
-                                            role: MessageRole::System,
-                                            content: e.to_string(),
-                                        });
                                         continue;
                                     }
                                 }
@@ -117,27 +132,27 @@ impl AiService {
                         Some(Err(e)) => match e {
                             reqwest_eventsource::Error::StreamEnded => break,
                             reqwest_eventsource::Error::InvalidStatusCode(s,e) => {
-                                let error_msg = reqwest_eventsource::Error::InvalidStatusCode(s, e).to_string();
+                                let e = reqwest_eventsource::Error::InvalidStatusCode(s, e).to_string();
                                 channel.send(StreamEvent::Error(StreamError {
                                     error_type: StreamErrorType::RequestSending,
-                                    detail: StreamErrorDetail::String(error_msg.clone()),
+                                    detail: StreamErrorDetail::String(e.clone()),
                                 })).map_err(Error::StreamChannel)?;
                                 msg_list.push(Message {
                                     role: MessageRole::System,
-                                    content: error_msg,
+                                    content: AiFeedbackMessage::InvalidStatusCode(e).into(),
                                 });
                                 return Err(Error::InterceptedEventsource);
                             }
                             reqwest_eventsource::Error::Transport(e) => {
                                 if e.is_request() {
-                                    let error_msg = reqwest_eventsource::Error::Transport(e).to_string();
+                                    let e = reqwest_eventsource::Error::Transport(e).to_string();
                                     channel.send(StreamEvent::Error(StreamError {
                                         error_type: StreamErrorType::RequestSending,
-                                        detail: StreamErrorDetail::String(error_msg.clone()),
+                                        detail: StreamErrorDetail::String(e.clone()),
                                     })).map_err(Error::StreamChannel)?;
                                     msg_list.push(Message {
                                         role: MessageRole::System,
-                                        content: error_msg,
+                                        content: AiFeedbackMessage::TransportError(e).into(),
                                     });
                                     return Err(Error::InterceptedEventsource);
                                 } else {
@@ -153,6 +168,34 @@ impl AiService {
                     eventsource.close();
                     interrupted = true;
                     break;
+                }
+            }
+        }
+        for (_, call) in current_calls.into_iter() {
+            if let Some(raw_arg) = call.arguments {
+                if let Some(name) = call.name {
+                    if let Ok(ToolName::ProgramSendMessage) = ToolName::parse(&name) {
+                        if
+                            let Ok(arg) = serde_json::from_str::<tool_calls::SendMessageParams>(
+                                &raw_arg
+                            )
+                        {
+                            let msg = format!(
+                                "[{}] {}",
+                                arg.message_level.unwrap_or_default().as_str().to_uppercase(),
+                                arg.message_content
+                            );
+                            println!("{msg}");
+                            msg_list.push(Message {
+                                role: MessageRole::System,
+                                content: AiFeedbackMessage::ToolCall(name.clone(), raw_arg).into(),
+                            });
+                            let _ = channel.send(StreamEvent::Tool {
+                                name,
+                                state: msg,
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -172,7 +215,7 @@ impl AiService {
         if interrupted {
             msg_list.push(Message {
                 role: MessageRole::System,
-                content: "[Assistant message is interrupted by user's next message]".to_string(),
+                content: AiFeedbackMessage::Interrupted.into(),
             });
         }
         drop(msg_list);
@@ -183,27 +226,6 @@ impl AiService {
             })
             .map_err(Error::StreamChannel)?;
         Ok(())
-    }
-    fn _extract_content(response: AiResponse) -> Option<String> {
-        response
-            .choices
-            .into_iter()
-            .next()
-            .map(|choice| choice.message.content)
-    }
-    // fn extract_stream_reason(response: StreamResponse) -> Option<String> {
-    //     response
-    //         .choices
-    //         .into_iter()
-    //         .next()
-    //         .map(|choice| choice.delta.reasoning_content)?
-    // }
-    fn extract_stream_content(response: StreamResponse) -> Option<String> {
-        response
-            .choices
-            .into_iter()
-            .next()
-            .map(|choice| choice.delta.content)?
     }
     async fn check_props(&self, channel: Option<Channel<StreamEvent>>) -> Result<(), Error> {
         let mut empty_items = Vec::new();
@@ -220,10 +242,12 @@ impl AiService {
             Ok(())
         } else {
             if let Some(channel) = channel {
-                let _ = channel.send(StreamEvent::Error(StreamError {
-                    error_type: StreamErrorType::EmptyParameter,
-                    detail: StreamErrorDetail::Parameter(empty_items.clone()),
-                }));
+                let _ = channel.send(
+                    StreamEvent::Error(StreamError {
+                        error_type: StreamErrorType::EmptyParameter,
+                        detail: StreamErrorDetail::Parameter(empty_items.clone()),
+                    })
+                );
             }
             Err(Error::EmptyParameter(empty_items))
         }
@@ -247,16 +271,13 @@ impl AiService {
             frequency_penalty: None,
             n: None,
             response_format: None,
-            tools: None,
+            tools: Some(self.tools.read().await.to_vec()),
         };
 
         let client = Client::new();
         let request_builder = client
             .post(self.endpoint.read().await.to_string())
-            .header(
-                AUTHORIZATION,
-                format!("Bearer {}", self.api_key.read().await),
-            )
+            .header(AUTHORIZATION, format!("Bearer {}", self.api_key.read().await))
             .header(CONTENT_TYPE, "application/json")
             .json(&request_body);
         let eventsource = EventSource::new(request_builder).map_err(Error::Reqwest)?;
@@ -268,13 +289,9 @@ impl AiService {
         let (tx_stop, rx_stop) = oneshot::channel();
         *stop = Some(tx_stop);
         let messages = self.messages.clone();
+        let logs = self.logs.clone();
 
-        spawn(AiService::parse_siliconflow(
-            channel,
-            eventsource,
-            messages,
-            rx_stop,
-        ));
+        spawn(AiService::parse_siliconflow(channel, eventsource, messages, rx_stop, logs));
         Ok(())
     }
     pub async fn stop(&self) -> Result<(), Error> {
@@ -290,5 +307,8 @@ impl AiService {
     pub async fn clear_history(&self) {
         let _ = self.stop().await;
         self.messages.write().await.clear();
+    }
+    pub async fn get_logs(&self) -> Result<Vec<String>, Error> {
+        Ok(self.logs.read().await.to_vec())
     }
 }

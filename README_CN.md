@@ -16,10 +16,15 @@
 - [ ] 推理模型支持
 - [ ] AI 撤回消息
 
-## 工具调用
+## API 接口
 
-- [ ] 工具提示
-- [ ] 基本调用能力
+- [x] 流式输出
+- [ ] 工具调用
+
+* [ ] SiliconFlow
+* [ ] OpenAI Compatible
+* [ ] Gemini
+* [ ] OpenRouter
 
 ## 提示
 

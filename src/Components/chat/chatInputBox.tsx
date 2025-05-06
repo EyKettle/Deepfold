@@ -85,8 +85,8 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
       ref={(e) => (element = e)}
       class={props.class}
       style={{
-        display: "flex",
-        "flex-direction": "column",
+        display: "grid",
+        "grid-template-rows": "1fr auto",
         padding: "1rem",
         gap: "0.5rem",
         "box-sizing": "border-box",
@@ -109,11 +109,10 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
         name="chat-input"
         disabled={!props.showed}
         style={{
-          "font-size": `${props.fontSize ?? "1rem"}`,
+          "font-size": props.fontSize ?? "1rem",
           border: "none",
           outline: "none",
           resize: "none",
-          "flex-grow": 1,
           width: "100%",
           background: "none",
           "transition-property": "all",

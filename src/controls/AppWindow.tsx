@@ -12,6 +12,7 @@ interface AppWindowProps {
   aiStatus: AiStatus;
   children?: any;
   showSettings?: () => void;
+  disableLabel?: boolean;
 }
 
 export const AppWindow: Component<AppWindowProps> = (props) => {
@@ -21,6 +22,7 @@ export const AppWindow: Component<AppWindowProps> = (props) => {
         aiStatus={props.aiStatus}
         title={props.title}
         showSettings={props.showSettings}
+        disableLabel={props.disableLabel}
       />
       <div class="window-content">
         <Suspense fallback={<div class="loading" />}>{props.children}</Suspense>
@@ -33,6 +35,7 @@ interface TitleBarProps {
   title?: string;
   aiStatus: AiStatus;
   showSettings?: () => void;
+  disableLabel?: boolean;
 }
 
 const TitleBar: Component<TitleBarProps> = (props) => {
@@ -50,7 +53,7 @@ const TitleBar: Component<TitleBarProps> = (props) => {
     });
   });
 
-  let animating: NodeJS.Timeout | undefined;
+  let animating: number | undefined;
   createEffect(() => {
     if (props.aiStatus === "typing") {
       if (animating) return;
@@ -84,13 +87,15 @@ const TitleBar: Component<TitleBarProps> = (props) => {
     <div data-tauri-drag-region class="icon titlebar">
       <div class="titlebar-title">
         <label
+          class={props.disableLabel ? "disable" : ""}
           tabIndex={0}
           id="titlebar-title"
           on:keypress={(e) => {
-            if (e.key === "Enter") props.showSettings?.();
+            if (!props.disableLabel && e.key === "Enter")
+              props.showSettings?.();
           }}
           onClick={() => {
-            props.showSettings?.();
+            if (!props.disableLabel) props.showSettings?.();
           }}
         >
           {props.title || "Window"}
@@ -105,6 +110,7 @@ const TitleBar: Component<TitleBarProps> = (props) => {
             "stroke-dashoffset": "19",
             "transition-property": "stroke, stroke-width, stroke-dashoffset",
             "transition-duration": "0.4s",
+            translate: "0 -1px",
           }}
           width={42}
           height={20}
