@@ -3,13 +3,16 @@ import { SolidMarkdown } from "solid-markdown";
 import remarkGfm from "remark-gfm";
 import { createRoot, createSignal, JSXElement, Show } from "solid-js";
 import Loading from "../loading";
+import MessageStatusBar, {
+  MessageStatus,
+} from "../../controls/MessageStatusBar";
 
 export const streamAiMessage = (
   operations: {
     append: (info: ChatMessage, open?: boolean) => number;
     set: (index: number, content: any, align?: boolean) => void;
     close: (index: number) => void;
-    alignCheck: () => boolean;
+    alignWith: (fun: () => void, duration?: number) => void;
     scrollToBottom: (duration?: number) => void;
   },
   sender: Sender
@@ -17,11 +20,13 @@ export const streamAiMessage = (
   push: (str: string) => void;
   setTopBar: (element: Element | JSXElement) => void;
   setBottomBar: (element: Element | JSXElement) => void;
+  setStatus: (status: MessageStatus) => void;
   over: () => void;
 } => {
   const [raw, setRaw] = createSignal("");
   const [top, setTop] = createSignal<JSXElement | undefined>(undefined);
   const [bottom, setBottom] = createSignal<JSXElement | undefined>(undefined);
+  const [note, setNote] = createSignal<MessageStatus | undefined>(undefined);
   const markdown = createRoot((dispose) => ({
     element: (
       <Show
@@ -29,9 +34,9 @@ export const streamAiMessage = (
         fallback={<Loading style={{ height: "1rem", width: "1rem" }} />}
       >
         <Show when={top() !== undefined}>
-          <div style={{ display: "inline-flex", width: "100%" }}>{top()}</div>
+          <div style={{ display: "inline-grid", width: "100%" }}>{top()}</div>
         </Show>
-        <Show when={raw() !== ""}>
+        <Show when={raw().trim() !== ""}>
           <SolidMarkdown
             class="chat-markdown"
             remarkPlugins={[remarkGfm]}
@@ -40,9 +45,12 @@ export const streamAiMessage = (
           ></SolidMarkdown>
         </Show>
         <Show when={bottom() !== undefined}>
-          <div style={{ display: "inline-flex", width: "100%", "margin-inline": "-0.5rem" }}>
+          <div style={{ display: "inline-grid", width: "100%" }}>
             {bottom()}
           </div>
+        </Show>
+        <Show when={note() !== undefined}>
+          <MessageStatusBar {...note()!} />
         </Show>
       </Show>
     ),
@@ -57,10 +65,8 @@ export const streamAiMessage = (
       );
   };
   const push = (str: string) => {
-    const willAlign = operations.alignCheck();
     check();
-    setRaw(raw() + str);
-    if (willAlign) operations.scrollToBottom(0);
+    operations.alignWith(() => setRaw(raw() + str), 0);
   };
   const setTopBar = (element: Element | JSXElement) => {
     check();
@@ -68,7 +74,11 @@ export const streamAiMessage = (
   };
   const setBottomBar = (element: Element | JSXElement) => {
     check();
-    setBottom(element);
+    operations.alignWith(() => setBottom(element), 0);
+  };
+  const setStatus = (status: MessageStatus) => {
+    check();
+    operations.alignWith(() => setNote(status), 0);
   };
   const over = () => {
     if (targetIndex) operations.close(targetIndex);
@@ -78,6 +88,7 @@ export const streamAiMessage = (
     push,
     setTopBar,
     setBottomBar,
+    setStatus,
     over,
   };
 };

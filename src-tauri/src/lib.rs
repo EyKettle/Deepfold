@@ -6,12 +6,14 @@ mod utils;
 use ai_service::{
     ai_calling::AiService,
     ai_service_clear,
+    ai_service_get_logs,
     ai_service_history,
     ai_service_init,
+    debug_request,
     ai_service_reset,
     ai_service_send,
     ai_service_stop,
-    ai_service_get_logs,
+    debug_service::DebugService,
 };
 use tauri_plugin_opener::open_url;
 use utils::{ config_load, config_read, config_save, config_set, local_data::{ self, LocalData } };
@@ -58,6 +60,7 @@ pub fn run() {
                 })
                 .build()
         )
+        .manage(DebugService::new())
         .setup(|app| {
             if let Ok(config_dir) = app.path().app_config_dir() {
                 app.manage(LocalData::new(config_dir.join("core.toml")));
@@ -97,6 +100,7 @@ pub fn run() {
                 ai_service_history,
                 ai_service_clear,
                 ai_service_get_logs,
+                debug_request
             ]
         )
         .run(tauri::generate_context!())

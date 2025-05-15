@@ -1,12 +1,12 @@
 import { Component, JSX } from "solid-js";
 
 interface InputBoxProps {
-  placeholder?: string;
-  value?: string;
-  multiline?: boolean;
+  ref?: (element: HTMLInputElement) => void;
   class?: string;
   style?: JSX.CSSProperties;
-  hide?: boolean;
+  placeholder?: string;
+  value?: string;
+  hideContent?: boolean;
   onFocus?: (
     event: FocusEvent & {
       currentTarget: HTMLInputElement;
@@ -34,12 +34,15 @@ interface InputBoxProps {
 }
 
 const InputBox: Component<InputBoxProps> = (props) => {
-  let element: HTMLDivElement | null = null;
+  let element: HTMLElement | undefined;
 
   return (
     <input
-      ref={(e) => (element = e)}
-      type={props.hide ? "password" : "text"}
+      ref={(e) => {
+        element = e;
+        props.ref?.(e);
+      }}
+      type={props.hideContent ? "password" : "text"}
       class={props.class}
       style={{
         border: "none",

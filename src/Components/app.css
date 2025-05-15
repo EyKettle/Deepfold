@@ -89,6 +89,7 @@ body {
 
   --color-theme-surface: rgba(255, 255, 255, 0.8);
   --color-theme-text: rgba(0, 0, 0, 0.8);
+  --color-theme-text-secondary: rgba(0, 0, 0, 0.4);
   --color-theme-accent: rgba(196, 81, 81, 0.8);
   --color-theme-accent-background: #e9acac;
   --color-theme-accent-background-translucent: rgba(238, 207, 207, 0.8);
@@ -113,6 +114,10 @@ body {
 
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-shadow-auto: none;
+
+  --color-scrollbar-thumb: hsla(0, 0%, 0%, 0.1);
+  --color-scrollbar-thumb-hover: hsla(0, 0%, 0%, 0.2);
+  --color-scrollbar-thumb-active: hsla(0, 0%, 0%, 0.15);
 
   --color-button-default: hsla(0, 0%, 100%, 0.5);
   --color-button-hover: hsla(0, 0%, 100%, 0.85);
@@ -180,6 +185,7 @@ html {
   body {
     --color-theme-surface: rgba(0, 0, 0, 0.8);
     --color-theme-text: rgba(255, 255, 255, 0.8);
+    --color-theme-text-secondary: rgba(255, 255, 255, 0.4);
     --color-theme-accent: rgba(155, 65, 65, 0.8);
     --color-theme-accent-background: #913939;
     --color-theme-accent-background-translucent: rgba(138, 55, 55, 0.4);
@@ -193,8 +199,8 @@ html {
     --color-surface-hover: hsla(0, 0%, 20%, 0.8);
     --color-surface-active: #262626;
     --color-surface-pressed: #1f1f1f;
-    --color-surface-glass: rgba(42, 42, 42, 0.6);
-    --color-surface-glass-thick: rgba(42, 42, 42, 0.9);
+    --color-surface-glass: rgba(42, 42, 42, 0.8);
+    --color-surface-glass-thick: rgba(42, 42, 42, 0.95);
     --color-surface-glass-dark: rgba(32, 32, 32, 0.6);
     --color-surface-glass-darker: rgba(26, 26, 26, 0.6);
 
@@ -204,6 +210,10 @@ html {
 
     --color-shadow: rgba(0, 0, 0, 0.3);
     --color-shadow-auto: var(--color-shadow);
+
+    --color-scrollbar-thumb: hsla(0, 0%, 100%, 0.1);
+    --color-scrollbar-thumb-hover: hsla(0, 0%, 100%, 0.2);
+    --color-scrollbar-thumb-active: hsla(0, 0%, 100%, 0.15);
 
     --color-button-default: hsla(0, 0%, 100%, 0.08);
     --color-button-hover: hsla(0, 0%, 100%, 0.12);

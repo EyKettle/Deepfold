@@ -10,6 +10,7 @@ window
   .then((theme) => {
     if (theme === "dark") document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
+  })
+  .then(() => {
+    render(() => <App />, document.getElementById("root")!);
   });
-
-render(() => <App />, document.getElementById("root") as HTMLElement);

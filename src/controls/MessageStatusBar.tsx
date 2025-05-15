@@ -1,6 +1,6 @@
 import { Component } from "solid-js";
 
-interface MessageStatus {
+export interface MessageStatus {
   label: string;
   type?: "error" | "warn" | "info" | "nothing";
 }

@@ -1,7 +1,6 @@
 import {
   type Component,
   createEffect,
-  createSignal,
   JSX,
   Match,
   onCleanup,
@@ -15,15 +14,12 @@ interface ButtonProps {
   iconColors?: string;
   label?: string;
   type?: "button" | "ghost";
-  rounded?: boolean;
-  size?: "small" | "medium" | "large";
   color?: string;
   backgroundColor?: {
     default: string;
     hover: string;
     active: string;
   };
-  borderRadius?: string;
   class?: string;
   style?: JSX.CSSProperties;
   iconStyle?: JSX.CSSProperties;
@@ -35,10 +31,6 @@ interface ButtonProps {
 export const Button: Component<ButtonProps> = (props) => {
   let element: HTMLButtonElement;
   let isTouch = false;
-
-  const [defaultStyle, setDefaultStyle] = createSignal({
-    fontSize: "1.125rem",
-  });
 
   const onEnterDown = (e: KeyboardEvent) => {
     if (e.key === "Enter" && !props.disabled) {
@@ -96,33 +88,6 @@ export const Button: Component<ButtonProps> = (props) => {
     element.style.backgroundColor = `var(--color-${props.type}-default)`;
     element.style.color = props.color ? props.color : "var(--color-theme-text)";
 
-    if (props.borderRadius) {
-      element.style.borderRadius = props.borderRadius;
-    } else if (props.rounded) element.style.borderRadius = "50%";
-    if (props.size) {
-      switch (props.size) {
-        case "medium":
-          element.style.minHeight = element.style.minWidth = "3rem";
-          element.style.padding = "0.75rem 1rem";
-          setDefaultStyle({ fontSize: "1.25rem" });
-          if (props.rounded || props.borderRadius) break;
-          element.style.borderRadius = "0.75rem";
-          break;
-        case "large":
-          element.style.minHeight = element.style.minWidth = "3.5rem";
-          element.style.padding = "1rem 1.5rem";
-          setDefaultStyle({ fontSize: "1.75rem" });
-          if (props.rounded || props.borderRadius) break;
-          element.style.borderRadius = "1.25rem";
-          break;
-      }
-    } else {
-      element.style.padding = "0.5rem 0.75rem";
-      if (!props.rounded && !props.borderRadius) {
-        element.style.borderRadius = "0.5rem";
-      }
-    }
-
     element.addEventListener("keydown", onEnterDown);
     element.addEventListener("keyup", onEnterUp);
   });
@@ -137,15 +102,18 @@ export const Button: Component<ButtonProps> = (props) => {
       ref={(e) => (element = e)}
       class={props.class}
       style={{
+        padding: "0.5rem 1rem",
+        "border-radius": "0.5rem",
         display: "inline-grid",
-        "grid-template-columns": `${props.icon && defaultStyle().fontSize} ${
-          props.label && "auto"
+        "grid-template-columns": `${props.icon !== undefined && "auto"} ${
+          props.label !== undefined && "auto"
         }`,
+        "column-gap": "0.5rem",
         "align-items": "center",
         "vertical-align": "middle",
         "min-height": "2.5rem",
         "min-width": "2.5rem",
-        "font-size": defaultStyle().fontSize,
+        "font-size": "1.125rem",
         "transition-property": "background-color, scale",
         "transition-duration": "0.3s",
         "transition-timing-function": "cubic-bezier(0, 0, 0, 1)",
@@ -204,14 +172,7 @@ export const Button: Component<ButtonProps> = (props) => {
         <Match when={typeof props.icon === "object"}>{props.icon}</Match>
       </Switch>
       <Show when={props.label}>
-        <span
-          style={{
-            "margin-inline": parseFloat(defaultStyle().fontSize) / 4 + "rem",
-            "user-select": "none",
-          }}
-        >
-          {props.label}
-        </span>
+        <span style={{ "user-select": "none" }}>{props.label}</span>
       </Show>
     </button>
   );

@@ -3,6 +3,7 @@ import Code from "../components/code";
 import { Button } from "../components/button";
 import Blocker from "../components/blocker";
 import { Icons, svgIcon } from "../components/svgIcon";
+import { buttonSize, roundButton } from "../components/utils";
 
 interface StreamLogProps {
   ref: (element: HTMLDivElement) => void;
@@ -72,20 +73,21 @@ const StreamLog: Component<StreamLogProps> = (props) => {
             "row-gap": "0.5rem",
           }}
         >
-          <text
+          <span
             style={{
               "grid-area": "title",
               "font-size": "1.125rem",
               "text-align": "center",
               "user-select": "none",
+              translate: "0 -1px",
             }}
           >
             查询最新 Streaming
-          </text>
+          </span>
           <Show
             when={props.children.length > 0}
             fallback={
-              <label
+              <span
                 style={{
                   "grid-area": "code",
                   height: "100%",
@@ -93,11 +95,11 @@ const StreamLog: Component<StreamLogProps> = (props) => {
                   display: "grid",
                   "place-items": "center",
                   "user-select": "none",
-                  opacity: 0.6,
+                  color: "var(--color-theme-text-secondary)",
                 }}
               >
                 没有数据
-              </label>
+              </span>
             }
           >
             <Code
@@ -111,46 +113,50 @@ const StreamLog: Component<StreamLogProps> = (props) => {
                 height: "100%",
                 width: "100%",
                 "border-radius": "0.5rem",
-                "background-color": "var(--color-surface-glass-thick)",
+                "background-color": "var(--color-surface-glass)",
               }}
             />
+            <Button
+              disabled={disablePrev()}
+              icon={svgIcon(Icons.Prev, 20)}
+              type="ghost"
+              style={{
+                ...buttonSize("medium"),
+                ...roundButton(),
+                padding: "1rem",
+                "grid-area": "prev",
+                opacity: disablePrev() ? "0.4" : "1",
+                "background-color": disablePrev()
+                  ? "transparent"
+                  : "transparent",
+              }}
+              onClick={() => handleSwitch(false)}
+            />
+            <label
+              style={{
+                "grid-area": "blank",
+                "user-select": "none",
+              }}
+            >
+              {currentIndex() + 1 + "/" + props.children.length}
+            </label>
+            <Button
+              disabled={disableNext()}
+              icon={svgIcon(Icons.Next, 20)}
+              type="ghost"
+              style={{
+                ...buttonSize("medium"),
+                ...roundButton(),
+                padding: "1rem",
+                "grid-area": "next",
+                opacity: disableNext() ? "0.4" : "1",
+                "background-color": disableNext()
+                  ? "transparent"
+                  : "transparent",
+              }}
+              onClick={() => handleSwitch(true)}
+            />
           </Show>
-          <Button
-            disabled={disablePrev()}
-            icon={svgIcon(Icons.Prev, 20)}
-            rounded={true}
-            type="ghost"
-            size="medium"
-            style={{
-              padding: "1rem",
-              "grid-area": "prev",
-              opacity: disablePrev() ? "0.4" : "1",
-              "background-color": disablePrev() ? "transparent" : "transparent",
-            }}
-            onClick={() => handleSwitch(false)}
-          />
-          <label
-            style={{
-              "grid-area": "blank",
-              "user-select": "none",
-            }}
-          >
-            {currentIndex() + 1 + "/" + props.children.length}
-          </label>
-          <Button
-            disabled={disableNext()}
-            icon={svgIcon(Icons.Next, 20)}
-            rounded={true}
-            type="ghost"
-            size="medium"
-            style={{
-              padding: "1rem",
-              "grid-area": "next",
-              opacity: disableNext() ? "0.4" : "1",
-              "background-color": disableNext() ? "transparent" : "transparent",
-            }}
-            onClick={() => handleSwitch(true)}
-          />
         </pre>
       </div>
     </>

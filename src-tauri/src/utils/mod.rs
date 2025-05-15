@@ -1,10 +1,12 @@
-use local_data::{CoreData, LocalData, Theme};
+use local_data::{ CoreData, LocalData, Theme };
 use serde::Serialize;
 use tauri::State;
 
 pub mod errors;
 pub mod frontend_types;
 pub mod local_data;
+
+pub type EmptyResult = Result<(), ()>;
 
 #[derive(Debug, Serialize)]
 pub enum ErrorType {
@@ -25,7 +27,7 @@ pub async fn config_set(
     endpoint: Option<String>,
     api_key: Option<String>,
     model_name: Option<String>,
-    state: State<'_, LocalData>,
+    state: State<'_, LocalData>
 ) -> Result<(), ()> {
     state.set(theme, endpoint, api_key, model_name).await;
     Ok(())

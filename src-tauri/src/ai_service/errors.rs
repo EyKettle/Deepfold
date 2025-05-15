@@ -20,3 +20,10 @@ pub enum Error {
     InterceptedEventsource,
     #[error("Reqwest Error: {0}")] Reqwest(reqwest_eventsource::CannotCloneRequestError),
 }
+
+#[derive(Debug, Error)]
+pub enum DebugError {
+    #[error("Unexpected streaming")]
+    UnexpectedStream,
+    #[error("Reqwest Error: {0}")] Reqwest(reqwest_eventsource::CannotCloneRequestError),
+}

@@ -17,6 +17,7 @@ interface SettingPageProps {
     resetService: () => void;
     saveConfig: () => void;
     openLog: (startingElement: HTMLButtonElement) => void;
+    openRequest: (startingElement: HTMLButtonElement) => void;
   };
   getOps: (switchTheme: (theme: Theme) => void) => void;
 }
@@ -190,7 +191,7 @@ const SettingPage: Component<SettingPageProps> = (props) => {
         <InputBox
           placeholder="密钥"
           value={props.config[0]().apiKey}
-          hide={true}
+          hideContent={true}
           onChange={(e) => {
             if (!e.target.value) return;
             props.config[1]((prev) => {
@@ -212,6 +213,7 @@ const SettingPage: Component<SettingPageProps> = (props) => {
             });
           }}
         />
+        <Button label="请求头测试" onClick={props.operations.openRequest} />
         <Button
           label="重置"
           onClick={() => {

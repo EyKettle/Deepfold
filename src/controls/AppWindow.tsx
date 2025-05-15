@@ -1,7 +1,7 @@
 import { Component, createEffect } from "solid-js";
 import { createSignal, onMount, Suspense } from "solid-js";
 import { Window } from "@tauri-apps/api/window";
-import { animateMini } from "motion";
+import { waapi } from "animejs";
 
 const appWindow = new Window("main");
 
@@ -53,7 +53,7 @@ const TitleBar: Component<TitleBarProps> = (props) => {
     });
   });
 
-  let animating: number | undefined;
+  let animating: NodeJS.Timeout | undefined;
   createEffect(() => {
     if (props.aiStatus === "typing") {
       if (animating) return;
@@ -70,16 +70,11 @@ const TitleBar: Component<TitleBarProps> = (props) => {
         resolve();
       });
     } else {
-      animateMini(
-        statusLight,
-        {
-          strokeWidth: [10, 16, 10],
-        },
-        {
-          duration: 0.6,
-          ease: [0.5, 0, 0, 1],
-        }
-      );
+      waapi.animate(statusLight, {
+        strokeWidth: [10, 16, 10],
+        ease: "cubicBezier(0, 0, 0, 1)",
+        duration: 400,
+      });
     }
   });
 

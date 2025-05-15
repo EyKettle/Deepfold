@@ -1,4 +1,4 @@
-import { createRoot, createSignal, onMount, Show } from "solid-js";
+import { createSignal, onMount, Show } from "solid-js";
 
 import { AiStatus, AppWindow } from "./controls/AppWindow";
 
@@ -11,12 +11,13 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import ChatInputBox from "./components/chat/chatInputBox";
 import { PageContainer } from "./components/pageContainer";
 import { ChatMessage, Sender } from "./components/chat/chatMessageBox";
-import { animate, animateMini, AnimationOptions } from "motion";
 import { streamAiMessage } from "./components/chat/MessageUtils";
-import MessageStatusBar from "./controls/MessageStatusBar";
 import { requestErrorTip, toolCallTip } from "./controls/MessageWidgets";
 import StreamLog from "./popUps/streamLogs";
 import { parseToolCall } from "./utils/aiService";
+import { createSpring, waapi } from "animejs";
+import RequestTest from "./popUps/requestTest";
+import { popup } from "./popUps/utils";
 
 enum Pages {
   SettingPage = 0,
@@ -92,7 +93,7 @@ function App() {
           append,
           set,
           close,
-          alignCheck,
+          alignWith,
           scrollToBottom,
         },
         Sender.Other
@@ -116,12 +117,7 @@ function App() {
             }
             setMessages(message.data.messages);
             if (message.data.interrupted) {
-              markdownMessage.setBottomBar(
-                createRoot((dispose) => {
-                  dispose();
-                  return <MessageStatusBar label="打断" type="nothing" />;
-                })
-              );
+              markdownMessage.setStatus({ label: "打断", type: "nothing" });
             }
             over();
             break;
@@ -204,12 +200,7 @@ function App() {
         channel: streamChannel,
       }).catch((e) => {
         parseServiceError(e);
-        markdownMessage.setBottomBar(
-          createRoot((dispose) => {
-            dispose();
-            return <MessageStatusBar label="程序运行错误" type="error" />;
-          })
-        );
+        markdownMessage.setStatus({ label: "程序内部错误", type: "error" });
         over();
       });
       resolve();
@@ -312,113 +303,56 @@ function App() {
   let set: (index: number, content: any, align?: boolean) => void;
   let close: (index: number) => void;
   let clearHistory: () => void;
-  let alignCheck: () => boolean;
-  let scrollToBottom: () => void;
+  let alignWith: (fun: () => void, duration?: number) => void;
+  let scrollToBottom: (duration?: number) => void;
 
   let pageContainer: HTMLDivElement;
-  let streamLog: HTMLDivElement;
+  let streamLogWindow: HTMLDivElement;
   const [log, setLog] = createSignal<string[]>([]);
   const [logHidden, setLogHidden] = createSignal(true);
   let logClose: (() => void) | undefined;
-  const easeMedium: AnimationOptions = {
-    ease: [0.5, 0, 0, 1],
-    duration: 0.4,
-  };
-  const handleOpenLog = async (startingElement: HTMLButtonElement) => {
-    setLog(await invoke<string[]>("ai_service_get_logs", { index: 0 }));
-    setLogHidden(false);
-    animateMini(
-      pageContainer,
-      {
-        scale: 0.9,
-        opacity: 0.6,
-        filter: "blur(0.75rem)",
-      },
-      easeMedium
-    );
 
-    pageContainer.style.userSelect = "none";
-    pageContainer.ariaDisabled = "true";
-    pageContainer.style.pointerEvents = "none";
-    startingElement.style.visibility = "hidden";
-    const { y, height, width } = startingElement.getBoundingClientRect();
-    const containerRect = pageContainer.getBoundingClientRect();
-    const startY = y - containerRect.y;
-    animateMini(
-      streamLog,
-      {
-        translate: [`0 ${startY}px`, "0 2rem"],
-        height: [height, "calc(100vh - 12rem)"],
-        width: [width, "calc(100vw - 2rem)"],
-        border: [
-          "1px solid transparent",
-          "1px solid var(--color-border-default)",
-        ],
-        backgroundColor: [
-          startingElement.style.backgroundColor,
-          "var(--color-surface-glass)",
-        ],
-        borderRadius: ["0.75rem", "1rem"],
-        boxShadow: [
-          "0 0 0 var(--color-shadow)",
-          "0 16px 32px var(--color-shadow)",
-        ],
-      },
-      easeMedium
+  let requestTestWindow: HTMLDivElement;
+  const [requestHidden, setRequestHidden] = createSignal(true);
+  let requestClose: (() => void) | undefined;
+
+  const openLog = async (startingElement: HTMLButtonElement) => {
+    setLog(await invoke<string[]>("ai_service_get_logs", { index: 0 }));
+    popup(
+      setLogHidden,
+      () => ({
+        background: pageContainer,
+        startingElement,
+        targetElement: streamLogWindow,
+      }),
+      (fn) =>
+        (logClose = () => {
+          logClose = undefined;
+          fn();
+        })
     );
-    animateMini(
-      streamLog.children[0].children[1],
-      {
-        opacity: [0, 1],
-      },
-      easeMedium
-    );
-    logClose = () => {
-      logClose = undefined;
-      animateMini(
-        pageContainer,
-        {
-          scale: 1,
-          opacity: 1,
-          filter: "blur(0)",
-        },
-        easeMedium
-      );
-      animateMini(
-        streamLog,
-        {
-          translate: `0 ${startY}px`,
-          height: height,
-          width: width,
-          border: "1px solid transparent",
-          backgroundColor: startingElement.style.backgroundColor,
-          borderRadius: "0.75rem",
-          boxShadow: "0 0 0 var(--color-shadow)",
-        },
-        easeMedium
-      ).then(() => {
-        setLogHidden(true);
-        pageContainer.style.userSelect = "unset";
-        pageContainer.ariaDisabled = "false";
-        pageContainer.style.pointerEvents = "unset";
-        startingElement.style.visibility = "visible";
-      });
-      animateMini(
-        streamLog.children[0].children[1],
-        {
-          opacity: 0,
-        },
-        easeMedium
-      );
-    };
   };
+  const openRequest = async (startingElement: HTMLButtonElement) =>
+    popup(
+      setRequestHidden,
+      () => ({
+        background: pageContainer,
+        startingElement,
+        targetElement: requestTestWindow,
+      }),
+      (fn) =>
+        (requestClose = () => {
+          requestClose = undefined;
+          fn();
+        })
+    );
 
   return (
     <AppWindow
       aiStatus={aiStatus()}
       title="深度折叠"
       showSettings={handleShowSettings}
-      disableLabel={!logHidden()}
+      disableLabel={!logHidden() || !requestHidden()}
     >
       <PageContainer
         ref={(c) => (pageContainer = c)}
@@ -444,99 +378,56 @@ function App() {
         switchMotion={(prev, cur, _isForward, dir) =>
           new Promise<void>((resolve) => {
             if (dir[1] === Pages.SettingPage) {
-              animateMini(
-                prev,
-                {
-                  opacity: 0,
-                  filter: "blur(1rem)",
-                },
-                {
-                  duration: 0.3,
-                  ease: [0, 0, 0, 1],
-                }
-              );
-              animate(
-                prev,
-                {
-                  scale: 0.8,
-                },
-                {
-                  duration: 0.3,
-                  ease: [0.5, 0, 0, 1],
-                }
-              );
-              animateMini(
-                cur,
-                {
-                  opacity: [0, 1],
-                  filter: ["blur(1rem)", "blur(0)"],
-                },
-                {
-                  duration: 0.3,
-                  ease: [0, 0, 0, 1],
-                }
-              );
-              animate(
-                cur,
-                {
-                  scale: [0.2, 1],
-                  x: ["-40vw", 0],
-                  y: ["-40vh", 0],
-                },
-                {
-                  type: "spring",
-                  duration: 0.4,
-                  bounce: 0.2,
-                }
-              ).then(() => {
-                resolve();
+              waapi.animate(prev, {
+                opacity: 0,
+                filter: "blur(1rem)",
+                duration: 300,
+                ease: "cubicBezier(0, 0, 0, 1)",
+              });
+              waapi.animate(prev, {
+                scale: 0.8,
+                duration: 300,
+                ease: "cubicBezier(0.5, 0, 0, 1)",
+              });
+              waapi.animate(cur, {
+                opacity: [0, 1],
+                filter: ["blur(1rem)", "blur(0)"],
+                duration: 300,
+                ease: "cubicBezier(0, 0, 0, 1)",
+              });
+              waapi.animate(cur, {
+                scale: [0.2, 1],
+                translate: ["-40vw -40vh", "0 0"],
+                ease: createSpring({
+                  stiffness: 500,
+                  damping: 35,
+                }),
+                onComplete: () => resolve(),
               });
             } else if (dir[0] === Pages.SettingPage) {
-              animateMini(
-                prev,
-                {
-                  opacity: 0,
-                  filter: "blur(1rem)",
-                },
-                {
-                  duration: 0.3,
-                  ease: [0, 0, 0, 1],
-                }
-              );
-              animate(
-                prev,
-                {
-                  scale: 0,
-                  x: "-50vw",
-                  y: "-50vh",
-                },
-                {
-                  duration: 0.3,
-                  ease: [0.5, 0, 0, 1],
-                }
-              );
-              animateMini(
-                cur,
-                {
-                  opacity: [0, 1],
-                  filter: ["blur(1rem)", "blur(0)"],
-                },
-                {
-                  duration: 0.3,
-                  ease: [0, 0, 0, 1],
-                }
-              );
-              animate(
-                cur,
-                {
-                  scale: [0.8, 1],
-                },
-                {
-                  duration: 0.3,
-                  ease: [0.5, 0, 0, 1],
-                }
-              ).then(() => {
-                resolve();
+              waapi.animate(prev, {
+                opacity: 0,
+                filter: "blur(1rem)",
+                duration: 300,
+                ease: "cubicBezier(0, 0, 0, 1)",
+              });
+              waapi.animate(prev, {
+                scale: 0,
+                translate: ["0 0", "-50vw -50vh"],
+                duration: 300,
+                ease: "out",
+              });
+              waapi.animate(cur, {
+                opacity: [0, 1],
+                filter: ["blur(1rem)", "blur(0)"],
+                duration: 300,
+                ease: "cubicBezier(0, 0, 0, 1)",
+              });
+              waapi.animate(cur, {
+                scale: [0.8, 1],
+                duration: 300,
+                ease: "cubicBezier(0.5, 0, 0, 1)",
+                onComplete: () => resolve(),
               });
             } else {
               resolve();
@@ -549,18 +440,13 @@ function App() {
           container.style.filter = "blur(1rem)";
           new Promise<void>((resolve) => {
             setTimeout(() => {
-              animateMini(
-                container,
-                {
-                  transform: "translateY(0)",
-                  opacity: 1,
-                  filter: "blur(0)",
-                },
-                {
-                  duration: 0.3,
-                  ease: [0.5, 0, 0, 1],
-                }
-              );
+              waapi.animate(container, {
+                transform: "translateY(0)",
+                opacity: 1,
+                filter: "blur(0)",
+                duration: 300,
+                ease: "cubicBezier(0.5, 0, 0, 1)",
+              });
               resolve();
             }, 200);
           });
@@ -578,30 +464,41 @@ function App() {
             clearMessages,
             resetService,
             saveConfig,
-            openLog: handleOpenLog,
+            openLog,
+            openRequest,
           }}
           getOps={(st) => (switchTheme = st)}
         />
         <HomePage
-          getOps={(a, s, cs, cr, ac, b) => {
+          getOps={(a, s, cs, cr, aw, b) => {
             append = a;
             set = s;
             close = cs;
             clearHistory = cr;
-            alignCheck = ac;
+            alignWith = aw;
             scrollToBottom = b;
           }}
         />
       </PageContainer>
       <Show when={!logHidden()}>
         <StreamLog
-          ref={(e) => (streamLog = e)}
+          ref={(e) => (streamLogWindow = e)}
           operations={{
             close: () => {
               logClose?.();
             },
           }}
           children={log()}
+        />
+      </Show>
+      <Show when={!requestHidden()}>
+        <RequestTest
+          ref={(e) => (requestTestWindow = e)}
+          operations={{
+            close: () => {
+              requestClose?.();
+            },
+          }}
         />
       </Show>
       <ChatInputBox

@@ -149,7 +149,6 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
         <Button
           disabled={!props.showed}
           label={props.submitLabel}
-          borderRadius="1.375rem"
           backgroundColor={{
             default: "var(--color-button-main-default)",
             hover: "var(--color-button-main-hover)",
@@ -158,6 +157,7 @@ const ChatInputBox: Component<ChatInputBoxProps> = (props) => {
           color="var(--color-button-main-text)"
           style={{
             "grid-column-start": 2,
+            "border-radius": "1.375rem",
           }}
           onClick={handleSubmit}
           getAnimates={(p, r) => {

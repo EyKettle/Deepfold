@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use schemars::schema::RootSchema;
+use schemars::schema::{ SchemaObject };
 use serde::{ Deserialize, Serialize };
 use serde_json::Value;
 
@@ -51,39 +49,40 @@ pub struct Tool {
 pub struct Function {
     pub name: String,
     pub description: Option<String>,
-    pub parameters: Option<RootSchema>,
-    pub arguments: Option<String>,
+    pub parameters: Option<SchemaObject>,
     pub strict: bool,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FunctionParameter {
+    pub param_type: String,
+    pub properties: SchemaObject,
+}
+
 impl Tool {
-    pub fn new(name: &str, description: &str, parameters: Option<RootSchema>) -> Self {
+    pub fn new(name: &str, description: &str, parameters: Option<SchemaObject>) -> Self {
         Self {
             tool_type: String::from("function"),
             function: Function {
                 name: name.to_string(),
                 description: Some(description.to_string()),
                 parameters,
-                arguments: None,
                 strict: true,
             },
         }
     }
 }
 
-#[derive(Debug, Serialize)]
-pub struct ToolParameter {
-    #[serde(rename = "type")]
-    pub param_type: String,
-    pub properties: HashMap<String, ToolProperty>,
-    pub required: Vec<String>,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolCall {
+    pub id: Option<String>,
+    pub function: CallFunction,
 }
 
-#[derive(Debug, Serialize)]
-pub struct ToolProperty {
-    #[serde(rename = "type")]
-    pub property_type: String,
-    pub description: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallFunction {
+    pub name: Option<String>,
+    pub arguments: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

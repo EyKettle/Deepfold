@@ -22,6 +22,7 @@
 - [ ] 工具调用
 
 * [ ] SiliconFlow
+* [ ] Ollama
 * [ ] OpenAI Compatible
 * [ ] Gemini
 * [ ] OpenRouter

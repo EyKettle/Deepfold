@@ -1,4 +1,5 @@
-use ai_calling::AiService;
+use ai_calling::{ AiConfig, AiService };
+use debug_service::DebugService;
 use service_types::StreamEvent;
 use siliconflow_types::Message;
 use tauri::{ async_runtime::spawn, ipc::Channel, Manager };
@@ -6,6 +7,7 @@ use tauri::{ async_runtime::spawn, ipc::Channel, Manager };
 use crate::utils::{ ErrorInfo, ErrorType };
 
 pub mod ai_calling;
+pub mod debug_service;
 mod tool_calls;
 mod errors;
 mod service_types;
@@ -81,4 +83,15 @@ pub async fn ai_service_get_logs(
     ai_service
         .get_logs().await
         .map_err(|e| ErrorInfo { error_type: ErrorType::Error, message: e.to_string() })
+}
+
+#[tauri::command]
+pub fn debug_request(json: String, channel: Channel<StreamEvent>, app: tauri::AppHandle) {
+    spawn(async move {
+        let AiConfig { endpoint, api_key, .. } = app.state::<AiService>().get_props().await;
+        let debug_service = app.state::<DebugService>();
+        if let Err(err) = debug_service.send_json(endpoint, api_key, json, channel).await {
+            println!("[ERROR] [DEBUG] Failed to execute send request:\n{err}\n——————\n");
+        }
+    });
 }

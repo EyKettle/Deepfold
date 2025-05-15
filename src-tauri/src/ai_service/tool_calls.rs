@@ -1,4 +1,4 @@
-use schemars::{ schema_for, JsonSchema };
+use schemars::{ schema_for, JsonSchema, SchemaGenerator };
 use serde::{ Deserialize, Serialize };
 
 use super::openai_types::Tool;
@@ -26,6 +26,16 @@ impl ToolName {
 }
 
 pub fn get_tools() -> Vec<Tool> {
+    let schema_generator = SchemaGenerator::default()
+        .settings()
+        .clone()
+        .with(|s| {
+            s.inline_subschemas = true;
+            s.option_add_null_type = false;
+            s.option_nullable = true;
+        })
+        .into_generator();
+
     let test_toolcall = Tool::new(
         ToolName::TestCall.as_str(),
         "Test if user's program support tool call.",
@@ -33,8 +43,8 @@ pub fn get_tools() -> Vec<Tool> {
     );
     let test_message = Tool::new(
         ToolName::ProgramSendMessage.as_str(),
-        "Send a fallback message to user's program.",
-        Some(schema_for!(SendMessageParams))
+        "Send a fallback message to user's program. Only use it in which scene it refers **User's Program** confirmly.",
+        Some(schema_generator.into_root_schema_for::<SendMessageParams>().schema)
     );
     Vec::from([test_toolcall, test_message])
 }

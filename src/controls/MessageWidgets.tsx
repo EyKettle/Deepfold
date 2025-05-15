@@ -27,22 +27,24 @@ export const toolCallTip = (
   return createRoot((dispose) => {
     dispose();
     return (
-      <div class={`toolcall-tip ${operations ? "o1" : ""}`}>
-        <h1>{icon}</h1>
-        <h2>{name}</h2>
-        <p title={process}>{process}</p>
-        <Show when={operations}>
-          <Button
-            icon={operations![0].icon}
-            onClick={operations![0].callback}
-            backgroundColor={{
-              default: "var(--color-button-main-default)",
-              hover: "var(--color-button-main-hover)",
-              active: "var(--color-button-main-active)",
-            }}
-          />
-        </Show>
-      </div> as Element
-    );
+      <div class="toolcall-tip-wrapper">
+        <div class={`toolcall-tip ${operations ? "o1" : ""}`}>
+          <h1>{icon}</h1>
+          <h2>{name}</h2>
+          <p title={process}>{process}</p>
+          <Show when={operations}>
+            <Button
+              icon={operations![0].icon}
+              onClick={operations![0].callback}
+              backgroundColor={{
+                default: "var(--color-button-main-default)",
+                hover: "var(--color-button-main-hover)",
+                active: "var(--color-button-main-active)",
+              }}
+            />
+          </Show>
+        </div>
+      </div>
+    ) as Element;
   });
 };
